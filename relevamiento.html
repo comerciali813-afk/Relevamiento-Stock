@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Relevamiento de Stock</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#1c2b24;
+  --paper:#f6f4ee;
+  --line:#d8d2c2;
+  --brand:#2f5d4f;
+  --brand-dark:#1f4136;
+  --brand-soft:#e4ede9;
+  --amber:#c98a2c;
+  --amber-soft:#f6e9d3;
+  --red:#a63a3a;
+  --red-soft:#f5e3e0;
+  --green:#2f7d4f;
+  --radius:10px;
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;background:var(--paper);color:var(--ink);-webkit-tap-highlight-color:transparent;}
+#app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:#fff;box-shadow:0 0 40px rgba(0,0,0,.06);}
+header.top{background:var(--brand-dark);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20;}
+header.top .mark{width:30px;height:30px;border-radius:7px;background:var(--amber);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--brand-dark);font-size:15px;flex:none;}
+header.top .titles{flex:1;min-width:0;}
+header.top h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.2px;}
+header.top .sub{font-size:11.5px;opacity:.75;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+header.top button.back{background:none;border:none;color:#fff;font-size:20px;padding:4px 6px;cursor:pointer;line-height:1;}
+main{flex:1;padding:18px 18px 90px;}
+h2.section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--brand);margin:0 0 12px;font-weight:700;}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12.5px;color:#5b6660;margin-bottom:5px;font-weight:600;}
+input[type=text],input[type=number],input[type=search],input[type=password],select,textarea{
+  width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fdfcf9;color:var(--ink);
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:0;border-color:var(--brand);}
+button.btn{border:none;border-radius:8px;padding:12px 16px;font-size:14.5px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;letter-spacing:.01em;}
+button.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-primary{background:var(--brand);color:#fff;}
+.btn-primary:active{background:var(--brand-dark);}
+.btn-outline{background:#fff;color:var(--brand);border:1.5px solid var(--brand);}
+.btn-ghost{background:var(--brand-soft);color:var(--brand-dark);}
+.btn-danger{background:var(--red-soft);color:var(--red);}
+.btn-amber{background:var(--amber);color:#3a2500;}
+.row-btns{display:flex;gap:10px;margin-top:14px;}
+.list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fdfcf9;cursor:pointer;}
+.list-item:active{background:var(--brand-soft);}
+.list-item .meta{font-size:12px;color:#6b756f;margin-top:2px;}
+.chev{color:#9aa39c;font-size:18px;}
+.badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:100px;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;}
+.badge-progress{background:var(--amber-soft);color:#8a5a10;}
+.badge-pending{background:var(--amber-soft);color:#8a5a10;}
+.badge-approved{background:var(--brand-soft);color:var(--brand-dark);}
+.badge-rejected{background:var(--red-soft);color:var(--red);}
+.badge-done{background:#e6e6e6;color:#444;}
+.badge-red{background:var(--red-soft);color:var(--red);}
+.badge-amber{background:var(--amber-soft);color:#8a5a10;}
+.badge-green{background:var(--brand-soft);color:var(--green);}
+.empty{text-align:center;padding:40px 10px;color:#8a9188;}
+.empty .big{font-size:34px;margin-bottom:8px;}
+details.cat-block{margin-bottom:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fdfcf9;}
+details.cat-block summary{list-style:none;cursor:pointer;padding:11px 14px;font-size:12.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--brand-dark);font-weight:700;display:flex;justify-content:space-between;align-items:center;background:var(--brand-soft);}
+details.cat-block summary::-webkit-details-marker{display:none;}
+details.cat-block summary .arrow{transition:transform .15s;font-size:11px;color:var(--brand);}
+details.cat-block[open] summary .arrow{transform:rotate(90deg);}
+details.cat-block summary .count{font-weight:600;text-transform:none;letter-spacing:0;font-size:11px;color:var(--brand);}
+.cat-body{padding:4px 14px 6px;}
+.sku-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);}
+.sku-row:last-child{border-bottom:none;}
+.sku-row .name{flex:1;font-size:13.5px;line-height:1.3;}
+.sku-row .name b{display:block;font-size:13px;}
+.sku-row .name span{color:#8a9188;font-size:12px;}
+.sku-row input{width:74px;text-align:center;padding:9px 4px;}
+.gps-box{display:flex;align-items:center;gap:10px;padding:12px;border:1px dashed var(--line);border-radius:8px;background:#fbfaf6;}
+.gps-box .ok{color:var(--brand);font-weight:700;}
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.photo-slot{aspect-ratio:1/1;border:1.5px dashed var(--line);border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#fbfaf6;font-size:11px;color:#8a9188;text-align:center;padding:4px;}
+.photo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.photo-slot input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.photo-slot .lbl{pointer-events:none;}
+.photo-slot.filled .lbl{display:none;}
+.sig-pad{border:1.5px dashed var(--line);border-radius:8px;background:#fdfcf9;touch-action:none;width:100%;height:180px;display:block;}
+.hint{font-size:12px;color:#8a9188;margin-top:6px;line-height:1.4;}
+.total-pill{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--brand-soft);border-radius:8px;font-size:13.5px;font-weight:700;color:var(--brand-dark);margin-bottom:10px;}
+.tabbar{position:sticky;bottom:0;display:flex;border-top:1px solid var(--line);background:#fff;z-index:20;}
+.tabbar button{flex:1;background:none;border:none;padding:11px 4px 9px;font-size:11px;color:#8a9188;font-weight:600;cursor:pointer;}
+.tabbar button.active{color:var(--brand);}
+.tabbar .ic{display:block;font-size:18px;margin-bottom:2px;}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:var(--brand-dark);color:#fff;padding:10px 18px;border-radius:100px;font-size:13px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:90%;text-align:center;}
+.mini-note{background:var(--amber-soft);border:1px solid #e6cf9e;border-radius:8px;padding:10px 12px;font-size:12px;color:#7a5310;margin-bottom:14px;line-height:1.5;}
+.check-row{display:flex;align-items:flex-start;gap:10px;padding:12px;border:1px solid var(--line);border-radius:8px;background:#fdfcf9;margin-bottom:12px;}
+.check-row input{width:20px;height:20px;margin-top:1px;flex:none;}
+.check-row label{font-size:13.5px;line-height:1.4;}
+.foot-actions{display:flex;gap:10px;margin-top:16px;}
+.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.city-btn{border:1.5px solid var(--line);background:#fdfcf9;border-radius:10px;padding:20px 8px;text-align:center;font-weight:700;font-size:15px;color:var(--brand-dark);cursor:pointer;}
+.city-btn.active{border-color:var(--brand);background:var(--brand-soft);}
+.metric{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px dashed var(--line);}
+.metric:last-child{border-bottom:none;}
+.metric .lbl{font-size:12.5px;color:#5b6660;}
+.metric .val{font-size:16px;font-weight:700;color:var(--brand-dark);}
+.bar-row{margin-bottom:10px;}
+.bar-row .top{display:flex;justify-content:space-between;font-size:12px;color:#556;margin-bottom:4px;}
+.bar-track{height:8px;border-radius:5px;background:var(--brand-soft);overflow:hidden;}
+.bar-fill{height:100%;background:var(--brand);border-radius:5px;}
+.risk-item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+.risk-item:last-child{border-bottom:none;}
+.risk-item .name{font-weight:600;}
+.risk-item .sub{font-size:11.5px;color:#8a9188;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* ---------------------------------------------------------------
+   CATALOGO DE SKUs
+--------------------------------------------------------------- */
+const SKU_CATALOG_RAW = [[1, "TODO BRILLO POLVO", 1, "Detergente en Polvo", "140 Gr", ""], [2, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "500 Gr", ""], [3, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "650 Gr", ""], [4, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [5, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "9.5", ""], [6, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "4.8 Kg", ""], [7, "TODO BRILLO PLUS POLVO", 1, "Detergente en Polvo", "650 Gr", ""], [8, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [9, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "4.5 Kg", ""], [10, "TODO BRILLO SUAVIZANTE DE ROPA", 1, "suavizante de ropa", "900 mL", "Doypack"], [11, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "3,8 mL", ""], [12, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "1700 mL", ""], [13, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 1, "suavizante de ropa", "800ml", ""], [14, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 0, "suavizante de ropa", "900ml", ""], [15, "TODO BRILLO VAJILLERO", 1, "Lavavajillas", "450 mL", "Doypack"], [16, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "900 mL", "Doypack"], [17, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "750 mL", "Botella"], [18, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "1200 mL", "Botella"], [19, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "2000 mL", "Botella"], [20, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "5 L.", "Bidon"], [21, "TODO BRILLO PLUS VAJILLERO", 1, "Lavavajillas", "5L", ""], [22, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "2L", ""], [23, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "1050ml", ""], [24, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "900ml", ""], [25, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "600ml", ""], [26, "TODO BRILLO ANTIGRASA", 1, "Antigrasa", "830 mL", "Gatillo"], [27, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "830 mL", "Recarga"], [28, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "900 mL", "Doypack"], [29, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "5 L.", ""], [30, "TODO BRILLO ANTISARRO", 1, "Antisarro", "550 mL", ""], [31, "TODO BRILLO LIMPIA BAÑOS", 1, "Limpia baño", "850 mL", "Gatillo"], [32, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "850 mL", "Recarga"], [33, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "5 L.", "Bidon"], [34, "TODO BRILLO LIMPIA VIDRIO", 1, "Limpia Vidrio", "850 mL", "Gatillo"], [35, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "850 mL", "Recarga"], [36, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "5 L.", ""], [37, "TODO BRILLO LUSTRA MUEBLES", 1, "Lustra Mueble", "850 mL", "Gatillo"], [38, "LIMPIA PISOS", 1, "Limpia Pisos", "1800 mL", ""], [39, "LIMPIA PISOS", 0, "Limpia Pisos", "5000 mL", ""], [40, "TODO BRILLO AMBIENTADORES", 1, "Ambientadores en aerosol", "360 cc", ""], [41, "TODO BRILLO AMBIENTADORES", 0, "Ambientadores en aerosol", "500 cc", ""], [42, "TODO BRILLO DESINFECTANTE", 1, "Desinfectante en aerosol", "360 cc", ""], [43, "LINEA TODO BRILLO LAVADO", 1, "TB Jabon de Lavar Ropa", "200 GR", ""], [44, "TYSON", 1, "Insecticida", "360 cc", "Aerosol"], [45, "TYSON", 0, "Insecticida", "500 cc", "Aerosol"], [46, "CARISSA CORPORAL", 1, "Jabon Liquido", "250 mL", "Mini Doypack"], [47, "CARISSA CORPORAL", 0, "Jabon Liquido", "360 mL", ""], [48, "CARISSA CORPORAL", 0, "Jabon Liquido", "900 mL", "Doypack"], [49, "CARISSA CORPORAL", 0, "Emulsion", "320 mL", "Botella"], [50, "CARISSA CORPORAL", 0, "Emulsion", "600 mL", "Botella"], [51, "CARISSA CORPORAL", 0, "Sanitizador", "360 mL", ""], [52, "CARISSA CORPORAL", 0, "Sanitizador", "900 mL", "Doypack"], [53, "CARISSA CORPORAL", 0, "Sanitizador", "5 L.", ""], [54, "CARISSA DESODORANTE EN CREMA", 1, "Desodorante en crema", "60gr", ""], [55, "LIN. CARISSA IMPORTADO", 1, "Carissa JT", "125gr", ""], [56, "LIN. CARISSA IMPORTADO", 0, "CARISSA JT TRIPACK", "375 g", ""], [57, "CARISSA CAPILAR", 1, "sachet mix 1x48", "60 mL", "x48"], [58, "CARISSA CAPILAR", 0, "Shampoo", "450 mL", "Mini Doypack"], [59, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Doypack"], [60, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Doypack"], [61, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Botella"], [62, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Botella"], [63, "CARISSA SONRISA", 1, "CARISSA SONRISA", "180g", ""], [64, "CARISSA SONRISA", 0, "CARISSA SONRISA", "50g", ""], [65, "REVIVE", 1, "Shampoo Botella", "340mL", "Botella"], [66, "REVIVE", 0, "Acondicionador Botella", "340mL", "Botella"], [67, "REVIVE", 0, "Sachet", "75 ml", "Sachet"], [68, "REVIVE DEO", 1, "REVIVE MEN DEO AERO 150", "150ml", ""], [69, "REVIVE DEO", 0, "REVIVE WOMEN DEO AERO", "150ml", ""], [70, "FIXER", 1, "Shampoo Fixer", "340 mL", "Fixer"], [71, "FIXER", 0, "Gel para el cabello", "50 g", "cabello"], [72, "FIXER", 0, "Gel para el cabello", "250g", "cabello"], [73, "FIXER", 0, "Gel para el cabello", "500 g", "cabello"], [74, "FIXER", 0, "Gel para el cabello", "1 Kg", "cabello"], [75, "TAI ALOE", 1, "Aloe Vera Tai", "550 mL", ""], [76, "ESPONJA ESFREBOM", 1, "Esponja Esfrebom", "", "Pack x4"], [77, "TODO BRILLO", 1, "Esponja", "", "Pack x4"], [78, "FOUR LOKO", 1, "Four Loko", "473 mL", ""], [79, "FOUR LOKO", 0, "Four Loko", "695 mL", ""], [80, "ALPHA", 1, "ALPHA TERMOGENICO", "355ml", ""], [81, "ALPHA", 0, "ALPHA PRE ENTRENO", "355ml", ""], [82, "ALPHA", 0, "ALPHA ENERGIZANTE", "473ml", ""], [83, "ALPHA", 0, "ALPHA ENERGIZANTE S/AZUCAR", "", ""], [84, "ALPHA", 0, "ALPHA ENERGIZANTE", "4736ml", ""], [85, "ALPHA", 0, "ALPHA ENERGIZANTE", "355ml", ""], [86, "ALPHA", 0, "ALPHA ENERGIZANTE S/AZUCAR", "355ml", ""]];
+
+const SKU_CATALOG = SKU_CATALOG_RAW.map(r=>({
+  id: "sku_"+r[0], n:r[0], marca:r[1], marcaShown: !!r[2], categoria:r[3], formato:r[4], observaciones:r[5],
+  formatoMostrado: r[4] + (r[5] ? (r[4]? " · ":"") + r[5] : "")
+}));
+
+const CATEGORIES = [...new Set(SKU_CATALOG.map(s=>s.categoria))];
+const CIUDADES = ["CBBA","LPZ","SCZ","SUR"];
+const NACIONAL = "NACIONAL";
+
+/* Por ahora la app no pide contraseña (fase de pruebas): solo se elige ciudad y nombre.
+   Cuando quieran volver a exigir un PIN por usuario, avisenme y lo reactivo. */
+
+/* Clientes precargados desde la planilla Trade Stock 2026 JUL (uno por ciudad) */
+const SEED_CLIENTES = {"CBBA":[{"nombre":"MAGUA","codigo":"106757","vendedor":"JOSE SILES"},{"nombre":"TRALOCOM","codigo":"106992","vendedor":"JOSE SILES"},{"nombre":"IS LOGISTIC","codigo":"106943","vendedor":"JOSE SILES"},{"nombre":"BJ","codigo":"106201","vendedor":"YASKARA MARTINEZ"},{"nombre":"TSC","codigo":"106924","vendedor":"YASKARA MARTINEZ"},{"nombre":"ELSA AIROJA","codigo":"106621","vendedor":"ELVIS FLORES"},{"nombre":"PATRICIA SAINZ","codigo":"","vendedor":"ELVIS FLORES"},{"nombre":"RUTH MATURANO","codigo":"102042","vendedor":"ELVIS FLORES"},{"nombre":"CIDAR FLORES","codigo":"106574","vendedor":"FREDDY PACHECO"},{"nombre":"JUAN MARCELO AQUINO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SANDRA TORRICO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SANDRA ZENTENO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"LITZI TICONA","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SILVIA HELSEY","codigo":"104202","vendedor":"BRIAN ROCHA"},{"nombre":"ARIANA PEREZ","codigo":"100333","vendedor":"BRIAN ROCHA"},{"nombre":"MARIA TELLES","codigo":"","vendedor":"BRIAN ROCHA"},{"nombre":"ERICK ROCHA","codigo":"","vendedor":"BRIAN ROCHA"}],"LPZ":[{"nombre":"JOSE LUIS GUTIERREZ","codigo":"210175","vendedor":"Alvaro Guzman"},{"nombre":"UFMAGU","codigo":"210246","vendedor":"Alvaro Guzman"},{"nombre":"ARMINIA MAMANI","codigo":"210014","vendedor":"Gabriela Orellana"},{"nombre":"VLADICOM","codigo":"","vendedor":"Mauricio Gutiérrez"},{"nombre":"NORDIX","codigo":"209623","vendedor":"Camilo Arias"},{"nombre":"Ariel Cuenca GRUPO ESTRATEGO BOLIVIA","codigo":"","vendedor":"Camilo Arias"},{"nombre":"MB WEYMAR","codigo":"","vendedor":"Camilo Arias"},{"nombre":"JUAN CALLE","codigo":"209763","vendedor":"CLAUDIO CHASQUI"}],"SCZ":[{"nombre":"JOSE QUISBERT","codigo":"","vendedor":"RAMADA"},{"nombre":"DAVID GUTIERREZ","codigo":"","vendedor":"RAMADA"},{"nombre":"EUDI COLODRO","codigo":"","vendedor":"ABASTO"},{"nombre":"ISABEL QUISPE","codigo":"","vendedor":"ABASTO"},{"nombre":"NATALY RODRIGUEZ","codigo":"","vendedor":"ABASTO"},{"nombre":"JUDITH CONDORI","codigo":"","vendedor":"ABASTO"},{"nombre":"CARMEN GARCIA","codigo":"","vendedor":"ABASTO"},{"nombre":"ROLANDO MENDOZA","codigo":"","vendedor":"ABASTO"},{"nombre":"LOF","codigo":"","vendedor":"ABASTO"},{"nombre":"HUDSON RICHAR FLORES","codigo":"","vendedor":"LOS POZOS"},{"nombre":"JAVIER PAUCARI","codigo":"","vendedor":"LOS POZOS"},{"nombre":"CORPORACION LOGISTICA","codigo":"","vendedor":"MUTUALISTA"},{"nombre":"MELQUI","codigo":"","vendedor":"MUTUALISTA"},{"nombre":"ALCIDES JOHANSIN","codigo":"","vendedor":"MONTERO"},{"nombre":"DRY FAST","codigo":"","vendedor":"MONTERO"},{"nombre":"ORLANDO QUISPE","codigo":"","vendedor":"MONTERO"},{"nombre":"FREDDY WILLAM","codigo":"","vendedor":"MONTERO"},{"nombre":"SILVIA ACHA","codigo":"","vendedor":"MONTERO"},{"nombre":"FLEMM","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"VALESCO","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"DRON/EFIFAST","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"HAKA","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"JOSE CARLOS FLORES","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"MARIA DE LOS ANGELES","codigo":"","vendedor":"DISTRIBUIDORES"}],"SUR":[{"nombre":"POSSIBLE","codigo":"","vendedor":"ORURO"},{"nombre":"CBIL CUATRODIEZ","codigo":"","vendedor":"POTOSÍ"},{"nombre":"KAREN GUTIÉRREZ","codigo":"","vendedor":"SUCRE"},{"nombre":"MACROSUR SRL.","codigo":"","vendedor":"TARIJA"}]};
+
+const DIAS_RETENCION_FOTOS = 30;
+
+/* =================================================================
+   CONFIGURACIÓN DEL BACKEND
+   Pegá aquí la URL de tu Google Apps Script (termina en /exec) una vez
+   que lo hayas implementado siguiendo las instrucciones de Code.gs.
+   Si la dejás vacía, la app funciona en MODO PRUEBA usando la memoria
+   compartida de este chat de Claude (los datos no persisten fuera de acá).
+================================================================= */
+const API_URL = "";
+const USE_BACKEND = API_URL.trim().length > 0;
+
+/* ---------------------------------------------------------------
+   PERSISTENCIA
+--------------------------------------------------------------- */
+const DB_LOCAL = {
+  async _get(key, fallback){
+    try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : fallback; }
+    catch(e){ return fallback; }
+  },
+  async _set(key, value){ try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){} },
+  async getAll(){
+    const clientes = await this._get("clientes", []);
+    const relevamientos = await this._get("relevamientos", {});
+    return { clientes, relevamientos };
+  },
+  async saveClientes(clientes){ await this._set("clientes", clientes); },
+  async saveRelevamiento(almacenId, clienteId, data){
+    const rel = await this._get("relevamientos", {});
+    rel[almacenId] = data;
+    await this._set("relevamientos", rel);
+  },
+  async uploadPhoto(almacenId, clienteId, slot, dataUrl){
+    // En modo prueba no hay Drive: la foto se guarda tal cual (base64) en el registro.
+    return { ok:true, url: dataUrl };
+  }
+};
+
+const DB_REMOTE = {
+  async getAll(){
+    const res = await fetch(API_URL + "?action=getAll");
+    if(!res.ok) throw new Error("No se pudo conectar al backend");
+    return await res.json();
+  },
+  async _post(payload){
+    // Content-Type text/plain evita que el navegador dispare un preflight CORS
+    // que Apps Script no sabe responder.
+    const res = await fetch(API_URL, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  },
+  async saveClientes(clientes){ return this._post({ action:"saveClientes", clientes }); },
+  async saveRelevamiento(almacenId, clienteId, data){ return this._post({ action:"saveRelevamiento", almacenId, clienteId, data }); },
+  async uploadPhoto(almacenId, clienteId, slot, dataUrl){ return this._post({ action:"uploadPhoto", almacenId, clienteId, slot, dataUrl }); }
+};
+
+const DB = USE_BACKEND ? DB_REMOTE : DB_LOCAL;
+
+let STATE = {
+  screen: "login",
+  ciudad: null,
+  role: null,
+  userName: "",
+  clienteId: null,
+  almacenId: null,
+  clientes: [],
+  relevamientos: {},
+  toast: null,
+  loginCiudadElegida: null,
+  firmaAcuerdo: false,
+  firmaMetodo: "dibujo",
+  firmaNombreTexto: "",
+};
+
+function uid(p){ return p+"_"+Date.now()+"_"+Math.floor(Math.random()*9999); }
+
+async function loadAll(){
+  const data = await DB.getAll();
+  STATE.clientes = data.clientes || [];
+  STATE.relevamientos = data.relevamientos || {};
+  const huboNuevos = seedClientesFaltantes();
+  if(huboNuevos) await DB.saveClientes(STATE.clientes);
+}
+async function saveClientes(){ await DB.saveClientes(STATE.clientes); }
+async function saveRelevamientoActual(almacenId){
+  const rel = STATE.relevamientos[almacenId];
+  const clienteId = STATE.clienteId;
+  await DB.saveRelevamiento(almacenId, clienteId, rel);
+}
+
+function seedClientesFaltantes(){
+  let huboNuevos = false;
+  CIUDADES.forEach(ciudad=>{
+    const existentes = new Set(STATE.clientes.filter(c=>c.ciudad===ciudad).map(c=>c.nombre.toUpperCase()));
+    (SEED_CLIENTES[ciudad]||[]).forEach(sc=>{
+      if(!existentes.has(sc.nombre.toUpperCase())){
+        STATE.clientes.push({ id: uid("cli"), ciudad, nombre: sc.nombre, codigo: sc.codigo||"", vendedor: sc.vendedor||"", almacenes: [], ventasProm:{} });
+        huboNuevos = true;
+      }
+    });
+  });
+  return huboNuevos;
+}
+
+function showToast(msg){ STATE.toast = msg; render(); setTimeout(()=>{ STATE.toast=null; render(); }, 2200); }
+
+function emptyRelevamiento(almacenId){
+  return {
+    almacenId, conteos:{}, fotos:[null,null,null,null], gps:null,
+    fechaCreacion:new Date().toISOString(), fechaConteo:null, relevadorNombre:"",
+    clienteAcuerdo:null, firmaImg:null, firmaFotoImg:null, fechaFirma:null,
+    estadoVendedor:"borrador", comentarioVendedor:"", fotosEliminadas:false,
+  };
+}
+
+function clientesDeMiCiudad(){
+  if(STATE.ciudad === NACIONAL) return STATE.clientes;
+  return STATE.clientes.filter(c=>c.ciudad===STATE.ciudad);
+}
+function getCliente(id){ return STATE.clientes.find(c=>c.id===id); }
+function getRelevamiento(almacenId){
+  if(!STATE.relevamientos[almacenId]) STATE.relevamientos[almacenId] = emptyRelevamiento(almacenId);
+  return STATE.relevamientos[almacenId];
+}
+function totalUnidades(rel){ return Object.values(rel.conteos||{}).reduce((a,b)=>a+(Number(b)||0),0); }
+function clienteEstadoGeneral(cliente){
+  const recs = (cliente.almacenes||[]).map(a=>STATE.relevamientos[a.id]).filter(Boolean);
+  if(recs.length===0) return "sin_iniciar";
+  if(recs.some(r=>r.estadoVendedor==="rechazado")) return "rechazado";
+  if(recs.every(r=>r.estadoVendedor==="aprobado")) return "aprobado";
+  if(recs.some(r=>r.estadoVendedor==="pendiente")) return "pendiente";
+  return "en_progreso";
+}
+function badgeFor(estado){
+  const map = {
+    sin_iniciar:["Sin iniciar","badge-done"], en_progreso:["En progreso","badge-progress"],
+    pendiente:["Pendiente aprobación","badge-pending"], aprobado:["Aprobado","badge-approved"],
+    rechazado:["Rechazado","badge-rejected"],
+  };
+  return map[estado]||["-","badge-done"];
+}
+
+/* stock actual por SKU para un cliente (suma de todos sus almacenes) */
+function stockPorSkuCliente(cliente){
+  const stock = {};
+  (cliente.almacenes||[]).forEach(a=>{
+    const rel = STATE.relevamientos[a.id];
+    if(!rel) return;
+    Object.entries(rel.conteos||{}).forEach(([sku,q])=>{ stock[sku]=(stock[sku]||0)+(Number(q)||0); });
+  });
+  return stock;
+}
+/* días de stock = stock actual / (venta promedio mensual / 30) */
+function diasStockSku(stockUnidades, ventaMensual){
+  if(!ventaMensual || ventaMensual<=0) return null;
+  return Math.round((stockUnidades / (ventaMensual/30))*10)/10;
+}
+function nivelRiesgo(dias){
+  if(dias==null) return ["sin dato","badge-done"];
+  if(dias < 7) return ["riesgo de quiebre","badge-red"];
+  if(dias < 15) return ["stock bajo","badge-amber"];
+  return ["cobertura ok","badge-green"];
+}
+
+/* ---------------------------------------------------------------
+   RENDER
+--------------------------------------------------------------- */
+const $app = document.getElementById("app");
+
+function render(){
+  let html = "";
+  if(STATE.screen==="login") html = screenLogin();
+  else if(STATE.screen==="home") html = screenHome();
+  else if(STATE.screen==="clientes") html = screenClientes();
+  else if(STATE.screen==="nuevoCliente") html = screenNuevoCliente();
+  else if(STATE.screen==="almacenes") html = screenAlmacenes();
+  else if(STATE.screen==="conteo") html = screenConteo();
+  else if(STATE.screen==="ubicacionFotos") html = screenUbicacionFotos();
+  else if(STATE.screen==="resumenCliente") html = screenResumenCliente();
+  else if(STATE.screen==="firma") html = screenFirma();
+  else if(STATE.screen==="vendedorLista") html = screenVendedorLista();
+  else if(STATE.screen==="vendedorDetalle") html = screenVendedorDetalle();
+  else if(STATE.screen==="ventasPromedio") html = screenVentasPromedio();
+  else if(STATE.screen==="dashboard") html = screenDashboard();
+  else if(STATE.screen==="exportar") html = screenExportar();
+
+  $app.innerHTML = html + (STATE.toast ? `<div class="toast">${STATE.toast}</div>` : "");
+  bindEvents();
+  if(STATE.screen==="firma") setupSignaturePad();
+}
+
+function header(title, sub, showBack, backTo){
+  return `
+  <header class="top">
+    ${showBack ? `<button class="back" data-nav="${backTo}">‹</button>` : `<div class="mark">RS</div>`}
+    <div class="titles"><h1>${title}</h1>${sub?`<div class="sub">${sub}</div>`:""}</div>
+  </header>`;
+}
+
+function tabbar(active){
+  if(!STATE.role) return "";
+  const base = STATE.role==="relevador"
+    ? [["clientes","🏬","Clientes"]]
+    : [["vendedorLista","✅","Aprobaciones"]];
+  base.push(["dashboard","📊","Dashboard"], ["exportar","📤","Exportar"], ["login","↺","Salir"]);
+  return `<nav class="tabbar">${base.map(([k,ic,lb])=>`<button data-nav="${k}" class="${active===k?'active':''}"><span class="ic">${ic}</span>${lb}</button>`).join("")}</nav>`;
+}
+
+function screenLogin(){
+  const elegida = STATE.loginCiudadElegida;
+  return `
+  <header class="top"><div class="mark">RS</div><div class="titles"><h1>Relevamiento de Stock</h1><div class="sub">Todo Brillo · Carissa · Revive · Fixer</div></div></header>
+  <main>
+    <div class="mini-note">Cada ciudad tiene su propio acceso. Al ingresar solo vas a ver los clientes de tu ciudad.</div>
+    <div class="mini-note" style="background:#f6e9d3;border-color:#e6cf9e;color:#7a5310;">
+      🧪 Modo de pruebas: por ahora no pide contraseña. Elegí tu ciudad y tu nombre para entrar.
+    </div>
+    <h2 class="section-title">1. Elegí tu usuario</h2>
+    <div class="city-grid">
+      ${CIUDADES.map(c=>`<div class="city-btn ${elegida===c?'active':''}" data-elegir-ciudad="${c}">${c}</div>`).join("")}
+    </div>
+    <div class="city-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}" style="text-align:center;margin:-6px 0 16px;">👤 Gerencia Nacional <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve las 4 ciudades</span></div>
+    ${elegida ? `
+    <div class="card">
+      <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
+      <div class="row-btns">
+        <button class="btn btn-primary" data-role="relevador">Ingresar como relevador</button>
+        <button class="btn btn-outline" data-role="vendedor">Ingresar como vendedor</button>
+      </div>
+    </div>` : ``}
+  </main>`;
+}
+
+function screenHome(){ STATE.screen = STATE.role==="vendedor" ? "vendedorLista" : "clientes"; return STATE.role==="vendedor" ? screenVendedorLista() : screenClientes(); }
+
+function nombreCiudad(c){ return c===NACIONAL ? "Gerencia Nacional" : c; }
+
+function screenClientes(){
+  const list = clientesDeMiCiudad();
+  return `
+  ${header(nombreCiudad(STATE.ciudad),"Clientes · "+STATE.userName,false)}
+  <main>
+    <button class="btn btn-primary" data-nav="nuevoCliente" style="margin-bottom:14px;">+ Nuevo cliente</button>
+    <h2 class="section-title">Clientes${STATE.ciudad!==NACIONAL?" en "+STATE.ciudad:""} (${list.length})</h2>
+    ${list.length===0 ? `<div class="empty"><div class="big">🗂️</div>Todavía no hay clientes cargados.</div>` :
+      list.map(c=>{
+        const est = clienteEstadoGeneral(c);
+        const [label,cls] = badgeFor(est);
+        return `<div class="list-item" data-cliente="${c.id}">
+          <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${c.vendedor||"sin vendedor"} · ${(c.almacenes||[]).length} almacén(es)</div></div>
+          <span class="badge ${cls}">${label}</span>
+        </div>`;
+      }).join("")}
+  </main>
+  ${tabbar('clientes')}`;
+}
+
+function screenNuevoCliente(){
+  return `
+  ${header("Nuevo cliente",nombreCiudad(STATE.ciudad),true,"clientes")}
+  <main>
+    <div class="card">
+      ${STATE.ciudad===NACIONAL ? `
+      <div class="field"><label>Ciudad</label>
+        <select id="cCiudad">${CIUDADES.map(c=>`<option value="${c}">${c}</option>`).join("")}</select>
+      </div>` : ``}
+      <div class="field"><label>Nombre del cliente</label><input type="text" id="cNombre" placeholder="Ej. Distribuidora Maguá"></div>
+      <div class="field"><label>Código (opcional)</label><input type="text" id="cCodigo" placeholder="Ej. 106757"></div>
+      <div class="field"><label>Vendedor asignado</label><input type="text" id="cVendedor" placeholder="Ej. Jose Siles"></div>
+      <button class="btn btn-primary" id="guardarCliente">Guardar cliente</button>
+    </div>
+  </main>`;
+}
+
+function almacenListoParaConteo(rel){
+  return !!(rel && rel.gps && rel.fotos && rel.fotos.filter(Boolean).length===4);
+}
+
+function abrirAlmacen(almacenId){
+  STATE.almacenId = almacenId;
+  const rel = getRelevamiento(almacenId);
+  STATE.screen = almacenListoParaConteo(rel) ? "conteo" : "ubicacionFotos";
+  render();
+}
+
+function screenAlmacenes(){
+  const c = getCliente(STATE.clienteId);
+  if(!c){ STATE.screen="clientes"; return screenClientes(); }
+  const almacenes = c.almacenes||[];
+  return `
+  ${header(c.nombre,nombreCiudad(STATE.ciudad)+" · "+(c.vendedor||"sin vendedor"),true,"clientes")}
+  <main>
+    <div class="field" style="margin-bottom:16px;">
+      <label>Agregar almacén</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="nuevoAlmacen" placeholder="Ej. Depósito Central, Sucursal Norte...">
+        <button class="btn btn-primary" id="addAlmacen" style="width:auto;padding:10px 16px;">+</button>
+      </div>
+      <div class="hint">Un mismo cliente puede tener varios almacenes: cada uno se releva por separado y se suman automáticamente al total del cliente. En cada almacén primero se registra la ubicación y las fotos, y recién después se habilita el conteo.</div>
+    </div>
+    <h2 class="section-title">Almacenes (${almacenes.length})</h2>
+    ${almacenes.length===0 ? `<div class="empty"><div class="big">🏬</div>Agregá el primer almacén de este cliente.</div>` :
+      almacenes.map(a=>{
+        const rel = STATE.relevamientos[a.id];
+        const done = rel && Object.keys(rel.conteos||{}).length>0;
+        const listo = almacenListoParaConteo(rel);
+        const gps = rel && rel.gps;
+        const fotos = rel ? rel.fotos.filter(Boolean).length : 0;
+        return `<div class="list-item" data-almacen="${a.id}">
+          <div><b>${a.nombre}</b><div class="meta">${!listo? "⚠️ Falta ubicación/fotos para habilitar el conteo":(done? "Conteo cargado":"Listo para contar")} · ${gps?"📍 ubicado":"📍 sin ubicar"} · 📷 ${fotos}/4${rel&&rel.fotosEliminadas?" (fotos vencidas)":""}</div></div>
+          <span class="chev">›</span>
+        </div>`;
+      }).join("")}
+    ${almacenes.length>0?`<button class="btn btn-amber" data-nav="resumenCliente" style="margin-top:18px;">Ver resumen y pasar a firma del cliente →</button>`:""}
+  </main>`;
+}
+
+function categoriasDesplegables(items, valueKey, dataAttr, relOrCliente){
+  return CATEGORIES.map(cat=>{
+    const skus = items.filter(s=>s.categoria===cat);
+    const conDatos = skus.filter(s=>relOrCliente[valueKey] && relOrCliente[valueKey][s.id]!=null && relOrCliente[valueKey][s.id]!=="").length;
+    return `<details class="cat-block" ${conDatos>0?'open':''}>
+      <summary><span><span class="arrow">▸</span> ${cat}</span><span class="count">${conDatos}/${skus.length} con datos</span></summary>
+      <div class="cat-body">
+        ${skus.map(s=>`<div class="sku-row">
+          <div class="name"><b>${s.marca}</b><span>${s.formatoMostrado}</span></div>
+          <input type="number" min="0" inputmode="numeric" placeholder="0" data-${dataAttr}="${s.id}" value="${(relOrCliente[valueKey]&&relOrCliente[valueKey][s.id]!=null)?relOrCliente[valueKey][s.id]:''}">
+        </div>`).join("")}
+      </div>
+    </details>`;
+  }).join("");
+}
+
+function screenConteo(){
+  const a = getAlmacen();
+  const rel = getRelevamiento(STATE.almacenId);
+  if(!almacenListoParaConteo(rel)){ STATE.screen="ubicacionFotos"; return screenUbicacionFotos(); }
+  return `
+  ${header("Conteo de stock",a.nombre,true,"almacenes")}
+  <main>
+    <div class="total-pill"><span>Total unidades contadas</span><span>${totalUnidades(rel)}</span></div>
+    ${categoriasDesplegables(SKU_CATALOG,"conteos","sku",rel)}
+    <div class="row-btns">
+      <button class="btn btn-primary" id="guardarConteo">Guardar conteo</button>
+    </div>
+    <button class="btn btn-ghost" id="volverFotosBtn" style="margin-top:10px;">Ver / retomar fotos y ubicación</button>
+  </main>`;
+}
+
+function getAlmacen(){ const c = getCliente(STATE.clienteId); return (c.almacenes||[]).find(a=>a.id===STATE.almacenId); }
+
+function screenUbicacionFotos(){
+  const a = getAlmacen();
+  const rel = getRelevamiento(STATE.almacenId);
+  const labels = ["Frente","Derecha","Fondo","Izquierda"];
+  const listo = almacenListoParaConteo(rel);
+  return `
+  ${header("Paso 1: ubicación y fotos",a.nombre,true,"almacenes")}
+  <main>
+    <div class="mini-note">Antes de contar la mercadería, registrá la ubicación GPS y las 4 fotos del almacén. El conteo se habilita recién cuando completes esto. Las fotos se eliminan automáticamente a los ${DIAS_RETENCION_FOTOS} días; el conteo, la ubicación y el historial de aprobación quedan guardados igual.</div>
+    <h2 class="section-title">1. Geolocalización</h2>
+    <div class="gps-box">
+      ${rel.gps ? `<div class="ok">📍 Ubicación capturada<br><span style="font-weight:400;color:#556">lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)} (±${Math.round(rel.gps.acc)}m)</span></div>`
+        : `<div>Todavía no capturaste la ubicación de este almacén.</div>`}
+    </div>
+    <button class="btn btn-outline" id="capturarGps" style="margin-top:10px;">${rel.gps?"Volver a capturar ubicación":"Capturar ubicación GPS"}</button>
+
+    <h2 class="section-title" style="margin-top:22px;">2. Fotos 360° del almacén</h2>
+    <div class="hint" style="margin-bottom:10px;">Tomá las 4 fotos, una por cada lado del almacén.${rel.fotosEliminadas?' Las fotos anteriores vencieron y fueron eliminadas; podés volver a tomarlas.':''}</div>
+    <div class="photo-grid">
+      ${[0,1,2,3].map(i=>`
+        <div class="photo-slot ${rel.fotos[i]?'filled':''}">
+          ${rel.fotos[i]?`<img src="${rel.fotos[i]}">`:`<span class="lbl">${labels[i]}</span>`}
+          <input type="file" accept="image/*" capture="environment" data-foto="${i}">
+        </div>`).join("")}
+    </div>
+
+    <button class="btn btn-primary" style="margin-top:20px;" id="continuarConteoBtn" ${listo?'':'disabled'}>${listo?"Continuar al conteo de stock →":"Completá ubicación y las 4 fotos para continuar"}</button>
+  </main>`;
+}
+
+function screenResumenCliente(){
+  const c = getCliente(STATE.clienteId);
+  const almacenes = c.almacenes||[];
+  const totales = stockPorSkuCliente(c);
+  const totalGeneral = Object.values(totales).reduce((a,b)=>a+b,0);
+  const conGps = almacenes.filter(a=>STATE.relevamientos[a.id] && STATE.relevamientos[a.id].gps).length;
+  const conFotos = almacenes.filter(a=>STATE.relevamientos[a.id] && STATE.relevamientos[a.id].fotos.some(Boolean)).length;
+  return `
+  ${header("Resumen del cliente",c.nombre,true,"almacenes")}
+  <main>
+    <div class="card">
+      <div class="total-pill"><span>Total unidades (todos los almacenes)</span><span>${totalGeneral}</span></div>
+      <div class="hint">${almacenes.length} almacén(es) · ${conGps}/${almacenes.length} con ubicación · ${conFotos}/${almacenes.length} con fotos</div>
+    </div>
+    <h2 class="section-title">Detalle por almacén</h2>
+    ${almacenes.map(a=>{
+      const rel = STATE.relevamientos[a.id]||{};
+      return `<div class="list-item" data-almacen-r="${a.id}">
+        <div><b>${a.nombre}</b><div class="meta">${totalUnidades(rel)} unidades</div></div>
+        <span class="chev">›</span>
+      </div>`;
+    }).join("")}
+    <button class="btn btn-amber" style="margin-top:20px;" data-nav="firma">Continuar a la firma del cliente →</button>
+  </main>`;
+}
+
+function screenFirma(){
+  const c = getCliente(STATE.clienteId);
+  const almacenes = c.almacenes||[];
+  return `
+  ${header("Conformidad del cliente",c.nombre,true,"resumenCliente")}
+  <main>
+    <div class="check-row">
+      <input type="checkbox" id="acuerdoCheck" ${STATE.firmaAcuerdo?'checked':''}>
+      <label for="acuerdoCheck">El cliente confirma que el stock relevado (${almacenes.length} almacén(es)) corresponde a lo contado en su(s) local(es) el día de hoy.</label>
+    </div>
+    ${STATE.firmaAcuerdo ? `
+      <h2 class="section-title">¿Cómo confirma el cliente?</h2>
+      <div class="row-btns" style="margin-bottom:16px;">
+        <button class="btn ${STATE.firmaMetodo==='dibujo'?'btn-primary':'btn-outline'}" id="metodoDibujo" type="button">✍️ Firmar en pantalla</button>
+        <button class="btn ${STATE.firmaMetodo==='nombre'?'btn-primary':'btn-outline'}" id="metodoNombre" type="button">⌨️ Solo escribir nombre</button>
+      </div>
+      ${STATE.firmaMetodo==='dibujo' ? `
+        <canvas class="sig-pad" id="sigPad"></canvas>
+        <div class="hint">Pedile al cliente que firme con el dedo sobre la pantalla.</div>
+        <button class="btn btn-ghost" id="limpiarFirma" style="margin-top:8px;">Borrar firma</button>
+      ` : `
+        <div class="field">
+          <label>Nombre completo de quien confirma</label>
+          <input type="text" id="firmaNombreInput" placeholder="Ej. María Pérez" value="${(STATE.firmaNombreTexto||'').replace(/"/g,'&quot;')}">
+        </div>
+      `}
+      <div class="hint" style="margin-top:14px;">Al tocar "Confirmar y enviar" se va a abrir la cámara frontal automáticamente para tomar una foto de quien confirma, y se envía todo junto.</div>
+      <button class="btn btn-primary" id="enviarVendedor" style="margin-top:14px;">Confirmar y enviar a aprobación</button>
+      <input type="file" accept="image/*" capture="user" id="firmaFotoInput" style="display:none;">
+    ` : ``}
+  </main>`;
+}
+
+function screenVendedorLista(){
+  const todos = clientesDeMiCiudad();
+  return `
+  ${header("Aprobaciones",nombreCiudad(STATE.ciudad)+" · "+STATE.userName,false)}
+  <main>
+    ${todos.length===0?`<div class="empty"><div class="big">📭</div>Todavía no hay clientes.</div>`:
+    todos.map(c=>{
+      const est = clienteEstadoGeneral(c);
+      const [label,cls] = badgeFor(est);
+      return `<div class="list-item" data-vcliente="${c.id}">
+        <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${c.vendedor||"sin vendedor"} · ${(c.almacenes||[]).length} almacén(es)</div></div>
+        <span class="badge ${cls}">${label}</span>
+      </div>`;
+    }).join("")}
+  </main>
+  ${tabbar('vendedorLista')}`;
+}
+
+function screenVendedorDetalle(){
+  const c = getCliente(STATE.clienteId);
+  const almacenes = c.almacenes||[];
+  return `
+  ${header(c.nombre,c.ciudad,true,"vendedorLista")}
+  <main>
+    <button class="btn btn-outline" data-nav="ventasPromedio" style="margin-bottom:16px;">📈 Cargar venta promedio mensual</button>
+    ${almacenes.map(a=>{
+      const rel = STATE.relevamientos[a.id] || emptyRelevamiento(a.id);
+      const estKey = rel.estadoVendedor==="pendiente"?"pendiente":rel.estadoVendedor==="aprobado"?"aprobado":rel.estadoVendedor==="rechazado"?"rechazado":"en_progreso";
+      const [label,cls] = badgeFor(estKey);
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <b>${a.nombre}</b><span class="badge ${cls}">${label}</span>
+        </div>
+        <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
+        <div class="hint">Ubicación: ${rel.gps?`lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)}`:"no capturada"}</div>
+        <div class="hint">Fotos del almacén: ${rel.fotos.filter(Boolean).length}/4${rel.fotosEliminadas?" (vencidas y eliminadas)":""}</div>
+        <div class="hint">Conformidad del cliente: ${rel.clienteAcuerdo===true?"Sí, firmó":rel.clienteAcuerdo===false?"No conforme":"pendiente"}${rel.firmaTipo?" · "+(rel.firmaTipo==="nombre"?"nombre escrito":"firma en pantalla"):""}</div>
+        ${rel.firmaImg?`<div class="hint">Firma registrada ✔ · Foto de firmante ${rel.firmaFotoImg?"✔":"vencida/no disponible"}</div>`:""}
+        ${rel.fotos.some(Boolean) ? `<div class="photo-grid" style="margin-top:10px;">${rel.fotos.map(f=>f?`<div class="photo-slot filled"><img src="${f}"></div>`:'').join("")}</div>`:""}
+        ${rel.firmaImg?`<div class="photo-slot filled" style="aspect-ratio:16/8;margin-top:10px;"><img src="${rel.firmaImg}"></div>`:""}
+        ${rel.estadoVendedor==="pendiente"?`
+          <div class="foot-actions">
+            <button class="btn btn-primary" data-aprobar="${a.id}">Aprobar</button>
+            <button class="btn btn-danger" data-rechazar="${a.id}">Rechazar</button>
+          </div>`:""}
+      </div>`;
+    }).join("")}
+  </main>
+  ${tabbar('vendedorLista')}`;
+}
+
+function screenVentasPromedio(){
+  const c = getCliente(STATE.clienteId);
+  c.ventasProm = c.ventasProm || {};
+  return `
+  ${header("Venta promedio mensual",c.nombre,true,"vendedorDetalle")}
+  <main>
+    <div class="mini-note">Ingresá cuántas unidades vende este cliente por mes en promedio, por producto. Con esto la app calcula los <b>días de stock</b> en el Dashboard (stock actual ÷ venta diaria promedio).</div>
+    ${categoriasDesplegables(SKU_CATALOG,"ventasProm","venta",c)}
+    <button class="btn btn-primary" id="guardarVentas">Guardar venta promedio</button>
+  </main>`;
+}
+
+function screenDashboard(){
+  const clientes = clientesDeMiCiudad();
+  let totalStockCiudad = 0;
+  let sumaDias=0, countDias=0;
+  const porCategoria = {};
+  const porCiudad = {};
+  const riesgos = []; // {cliente, sku, dias}
+  const clientesCobertura = []; // {cliente, dias}
+  let pendientesAprobacion = 0;
+  let relevadosEsteMes = 0;
+  const hoy = Date.now();
+
+  clientes.forEach(c=>{
+    const stock = stockPorSkuCliente(c);
+    let stockCliente=0, ventaMensualCliente=0, diasClienteAcc=[];
+    Object.entries(stock).forEach(([skuId,qty])=>{
+      totalStockCiudad += qty;
+      stockCliente += qty;
+      porCiudad[c.ciudad] = (porCiudad[c.ciudad]||0)+qty;
+      const sku = SKU_CATALOG.find(s=>s.id===skuId);
+      if(sku) porCategoria[sku.categoria] = (porCategoria[sku.categoria]||0)+qty;
+      const venta = (c.ventasProm||{})[skuId];
+      const dias = diasStockSku(qty, venta);
+      if(dias!=null){
+        sumaDias += dias; countDias++;
+        diasClienteAcc.push(dias);
+        if(sku) riesgos.push({cliente:c.nombre+(STATE.ciudad===NACIONAL?" ("+c.ciudad+")":""), sku:sku.marca+" "+sku.formatoMostrado, dias});
+      }
+      if(venta) ventaMensualCliente += Number(venta);
+    });
+    if(diasClienteAcc.length>0){
+      const prom = diasClienteAcc.reduce((a,b)=>a+b,0)/diasClienteAcc.length;
+      clientesCobertura.push({cliente:c.nombre+(STATE.ciudad===NACIONAL?" ("+c.ciudad+")":""), dias:Math.round(prom*10)/10});
+    }
+    (c.almacenes||[]).forEach(a=>{
+      const rel = STATE.relevamientos[a.id];
+      if(!rel) return;
+      if(rel.estadoVendedor==="pendiente") pendientesAprobacion++;
+      if(rel.fechaConteo && (hoy-new Date(rel.fechaConteo).getTime())/86400000<=30) relevadosEsteMes++;
+    });
+  });
+
+  riesgos.sort((a,b)=>a.dias-b.dias);
+  clientesCobertura.sort((a,b)=>a.dias-b.dias);
+  const coberturaPromedio = countDias>0 ? Math.round((sumaDias/countDias)*10)/10 : null;
+  const maxCat = Math.max(1,...Object.values(porCategoria));
+  const maxCiudad = Math.max(1,...Object.values(porCiudad));
+
+  return `
+  ${header("Dashboard comercial",nombreCiudad(STATE.ciudad)+" · datos para el equipo de ventas",false)}
+  <main>
+    <div class="card">
+      <div class="metric"><span class="lbl">Total unidades en stock</span><span class="val">${totalStockCiudad}</span></div>
+      <div class="metric"><span class="lbl">Cobertura promedio de stock</span><span class="val">${coberturaPromedio!=null? coberturaPromedio+" días":"sin datos de venta"}</span></div>
+      <div class="metric"><span class="lbl">Almacenes relevados en los últimos 30 días</span><span class="val">${relevadosEsteMes}</span></div>
+      <div class="metric"><span class="lbl">Pendientes de aprobación</span><span class="val">${pendientesAprobacion}</span></div>
+    </div>
+
+    ${STATE.ciudad===NACIONAL ? `
+    <h2 class="section-title">Stock por ciudad</h2>
+    <div class="card">
+      ${Object.keys(porCiudad).length===0?`<div class="hint">Todavía no hay conteos cargados.</div>`:
+      CIUDADES.filter(c=>porCiudad[c]).map(c=>`
+        <div class="bar-row">
+          <div class="top"><span>${c}</span><span>${porCiudad[c]} u.</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(porCiudad[c]/maxCiudad*100).toFixed(0)}%"></div></div>
+        </div>`).join("")}
+    </div>` : ``}
+
+    <h2 class="section-title">Stock por categoría</h2>
+    <div class="card">
+      ${Object.keys(porCategoria).length===0?`<div class="hint">Todavía no hay conteos cargados.</div>`:
+      Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).map(([cat,qty])=>`
+        <div class="bar-row">
+          <div class="top"><span>${cat}</span><span>${qty} u.</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(qty/maxCat*100).toFixed(0)}%"></div></div>
+        </div>`).join("")}
+    </div>
+
+    <h2 class="section-title">Clientes con menor cobertura (riesgo de quiebre)</h2>
+    <div class="card">
+      ${clientesCobertura.length===0?`<div class="hint">Cargá la venta promedio mensual de cada cliente (desde Aprobaciones → cliente → "Cargar venta promedio mensual") para ver esta alerta.</div>`:
+      clientesCobertura.slice(0,6).map(r=>{
+        const [lbl,cls]=nivelRiesgo(r.dias);
+        return `<div class="risk-item"><div><div class="name">${r.cliente}</div><div class="sub">cobertura promedio</div></div><span class="badge ${cls}">${r.dias} días</span></div>`;
+      }).join("")}
+    </div>
+
+    <h2 class="section-title">Productos en riesgo de quiebre por cliente</h2>
+    <div class="card">
+      ${riesgos.length===0?`<div class="hint">Sin datos suficientes todavía.</div>`:
+      riesgos.slice(0,8).map(r=>{
+        const [lbl,cls]=nivelRiesgo(r.dias);
+        return `<div class="risk-item"><div><div class="name">${r.sku}</div><div class="sub">${r.cliente}</div></div><span class="badge ${cls}">${r.dias} días</span></div>`;
+      }).join("")}
+    </div>
+  </main>
+  ${tabbar('dashboard')}`;
+}
+
+function screenExportar(){
+  const esNacional = STATE.ciudad===NACIONAL;
+  return `
+  ${header("Exportar a Excel",nombreCiudad(STATE.ciudad),false)}
+  <main>
+    <div class="mini-note">
+      El Excel sale con el mismo formato que tu planilla base (N°, Marca, Categoría, Formato, Observaciones, LINEA 3, y una columna por cliente agrupada por vendedor)${esNacional?", con una hoja por ciudad":""}. Incluye además una hoja "Detalle" (GPS, evidencia, aprobación) y una hoja "Dashboard" con días de stock.
+    </div>
+    <button class="btn btn-primary" id="exportarBtn">Descargar Excel${esNacional?" (todas las ciudades)":" de "+STATE.ciudad}</button>
+    <div class="hint" style="margin-top:10px;text-align:center;">Las fotos y la firma quedan dentro de la app (se eliminan a los ${DIAS_RETENCION_FOTOS} días); el Excel indica cuántas fotos y si hay firma.</div>
+  </main>
+  ${tabbar('exportar')}`;
+}
+
+/* ---------------------------------------------------------------
+   EVENTOS
+--------------------------------------------------------------- */
+function bindEvents(){
+  $app.querySelectorAll("[data-nav]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      if(el.dataset.nav==="login"){ STATE = {...STATE, screen:"login", ciudad:null, role:null, clienteId:null, almacenId:null, loginCiudadElegida:null}; }
+      else STATE.screen = el.dataset.nav;
+      render();
+    });
+  });
+
+  $app.querySelectorAll("[data-elegir-ciudad]").forEach(el=>{
+    el.addEventListener("click",()=>{ STATE.loginCiudadElegida = el.dataset.elegirCiudad; render(); });
+  });
+
+  $app.querySelectorAll("[data-role]").forEach(el=>{
+    el.addEventListener("click", async ()=>{
+      const name = document.getElementById("userName").value.trim();
+      const ciudad = STATE.loginCiudadElegida;
+      if(!name){ showToast("Escribí tu nombre para continuar"); return; }
+      STATE.userName = name;
+      STATE.ciudad = ciudad;
+      STATE.role = el.dataset.role;
+      STATE.screen = el.dataset.role==="relevador" ? "clientes" : "vendedorLista";
+      render();
+    });
+  });
+
+  $app.querySelectorAll("[data-cliente]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      STATE.clienteId = el.dataset.cliente; STATE.screen="almacenes";
+      STATE.firmaAcuerdo=false; STATE.firmaMetodo="dibujo"; STATE.firmaNombreTexto="";
+      render();
+    });
+  });
+  $app.querySelectorAll("[data-vcliente]").forEach(el=>{
+    el.addEventListener("click",()=>{ STATE.clienteId = el.dataset.vcliente; STATE.screen="vendedorDetalle"; render(); });
+  });
+  $app.querySelectorAll("[data-almacen]").forEach(el=>{
+    el.addEventListener("click",()=>{ abrirAlmacen(el.dataset.almacen); });
+  });
+  $app.querySelectorAll("[data-almacen-r]").forEach(el=>{
+    el.addEventListener("click",()=>{ abrirAlmacen(el.dataset.almacenR); });
+  });
+
+  const btnGuardarCliente = document.getElementById("guardarCliente");
+  if(btnGuardarCliente){
+    btnGuardarCliente.addEventListener("click", async ()=>{
+      const nombre = document.getElementById("cNombre").value.trim();
+      const codigo = document.getElementById("cCodigo").value.trim();
+      const vendedor = document.getElementById("cVendedor").value.trim();
+      const cCiudadEl = document.getElementById("cCiudad");
+      const ciudadNuevo = cCiudadEl ? cCiudadEl.value : STATE.ciudad;
+      if(!nombre){ showToast("Ingresá el nombre del cliente"); return; }
+      const nuevo = { id: uid("cli"), ciudad: ciudadNuevo, nombre, codigo, vendedor, almacenes: [], ventasProm:{} };
+      STATE.clientes.push(nuevo);
+      await saveClientes();
+      STATE.clienteId = nuevo.id;
+      STATE.screen = "almacenes";
+      render();
+    });
+  }
+
+  const addAlmacenBtn = document.getElementById("addAlmacen");
+  if(addAlmacenBtn){
+    addAlmacenBtn.addEventListener("click", async ()=>{
+      const input = document.getElementById("nuevoAlmacen");
+      const nombre = input.value.trim();
+      if(!nombre){ showToast("Escribí un nombre para el almacén"); return; }
+      const c = getCliente(STATE.clienteId);
+      c.almacenes = c.almacenes||[];
+      c.almacenes.push({ id: uid("alm"), nombre });
+      await saveClientes();
+      input.value="";
+      render();
+    });
+  }
+
+  async function guardarConteoDesdeInputs(){
+    const rel = getRelevamiento(STATE.almacenId);
+    $app.querySelectorAll("[data-sku]").forEach(inp=>{
+      const v = inp.value;
+      if(v!=="" && Number(v)>=0) rel.conteos[inp.dataset.sku] = Number(v);
+      else delete rel.conteos[inp.dataset.sku];
+    });
+    rel.fechaConteo = new Date().toISOString();
+    rel.relevadorNombre = STATE.userName;
+    await saveRelevamientoActual(STATE.almacenId);
+  }
+  const guardarConteoBtn = document.getElementById("guardarConteo");
+  if(guardarConteoBtn){
+    guardarConteoBtn.addEventListener("click", async ()=>{
+      await guardarConteoDesdeInputs();
+      showToast("Conteo guardado");
+      STATE.screen="almacenes"; render();
+    });
+  }
+  const irFotosBtn = document.getElementById("continuarConteoBtn");
+  if(irFotosBtn){
+    irFotosBtn.addEventListener("click", ()=>{
+      const rel = getRelevamiento(STATE.almacenId);
+      if(!almacenListoParaConteo(rel)){ showToast("Completá la ubicación y las 4 fotos primero"); return; }
+      STATE.screen="conteo"; render();
+    });
+  }
+  const volverFotosBtn = document.getElementById("volverFotosBtn");
+  if(volverFotosBtn){
+    volverFotosBtn.addEventListener("click", ()=>{ STATE.screen="ubicacionFotos"; render(); });
+  }
+
+  const guardarVentasBtn = document.getElementById("guardarVentas");
+  if(guardarVentasBtn){
+    guardarVentasBtn.addEventListener("click", async ()=>{
+      const c = getCliente(STATE.clienteId);
+      c.ventasProm = c.ventasProm || {};
+      $app.querySelectorAll("[data-venta]").forEach(inp=>{
+        const v = inp.value;
+        if(v!=="" && Number(v)>=0) c.ventasProm[inp.dataset.venta] = Number(v);
+        else delete c.ventasProm[inp.dataset.venta];
+      });
+      await saveClientes();
+      showToast("Venta promedio guardada");
+      STATE.screen="vendedorDetalle"; render();
+    });
+  }
+
+  const gpsBtn = document.getElementById("capturarGps");
+  if(gpsBtn){
+    gpsBtn.addEventListener("click", ()=>{
+      if(!navigator.geolocation){ showToast("Este navegador no soporta GPS"); return; }
+      gpsBtn.textContent = "Buscando señal…";
+      navigator.geolocation.getCurrentPosition(async (pos)=>{
+        const rel = getRelevamiento(STATE.almacenId);
+        rel.gps = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy, ts: Date.now() };
+        await saveRelevamientoActual(STATE.almacenId);
+        render();
+      }, (err)=>{ showToast("No se pudo obtener la ubicación: "+err.message); render(); }, { enableHighAccuracy:true, timeout:15000 });
+    });
+  }
+
+  $app.querySelectorAll("[data-foto]").forEach(inp=>{
+    inp.addEventListener("change", (e)=>{
+      const idx = Number(inp.dataset.foto);
+      const almacenId = STATE.almacenId;
+      handleFile(e.target.files[0], async (dataUrl)=>{
+        showToast("Subiendo foto…");
+        const res = await DB.uploadPhoto(almacenId, STATE.clienteId, String(idx), dataUrl);
+        const rel = getRelevamiento(almacenId);
+        rel.fotos[idx] = (res && res.url) || dataUrl;
+        rel.fotosEliminadas = false;
+        await saveRelevamientoActual(almacenId);
+        showToast("Foto guardada");
+        render();
+      });
+    });
+  });
+
+  const acuerdoCheck = document.getElementById("acuerdoCheck");
+  if(acuerdoCheck){
+    acuerdoCheck.addEventListener("change",()=>{
+      STATE.firmaAcuerdo = acuerdoCheck.checked;
+      if(!STATE.firmaAcuerdo){ STATE.firmaMetodo="dibujo"; STATE.firmaNombreTexto=""; }
+      render();
+    });
+  }
+
+  const metodoDibujoBtn = document.getElementById("metodoDibujo");
+  if(metodoDibujoBtn){ metodoDibujoBtn.addEventListener("click", ()=>{ STATE.firmaMetodo="dibujo"; render(); }); }
+  const metodoNombreBtn = document.getElementById("metodoNombre");
+  if(metodoNombreBtn){ metodoNombreBtn.addEventListener("click", ()=>{ STATE.firmaMetodo="nombre"; render(); }); }
+  const firmaNombreInput = document.getElementById("firmaNombreInput");
+  if(firmaNombreInput){ firmaNombreInput.addEventListener("input", ()=>{ STATE.firmaNombreTexto = firmaNombreInput.value; }); }
+
+  const limpiarFirma = document.getElementById("limpiarFirma");
+  if(limpiarFirma){ limpiarFirma.addEventListener("click",()=>{ clearSignature(); }); }
+
+  async function finalizarEnvioFirma(fotoDataUrl){
+    showToast("Enviando…");
+    const c = getCliente(STATE.clienteId);
+    const almacenes = c.almacenes||[];
+    const primero = almacenes[0];
+    const firmaImgLocal = STATE.firmaMetodo==="dibujo" ? getSignatureDataUrl() : generarImagenNombre(STATE.firmaNombreTexto);
+    const resFirma = await DB.uploadPhoto(primero.id, c.id, "firma", firmaImgLocal);
+    const resFoto = await DB.uploadPhoto(primero.id, c.id, "firmaFoto", fotoDataUrl);
+    const firmaImgUrl = (resFirma && resFirma.url) || firmaImgLocal;
+    const firmaFotoUrl = (resFoto && resFoto.url) || fotoDataUrl;
+    for(const a of almacenes){
+      const rel = getRelevamiento(a.id);
+      rel.clienteAcuerdo = true;
+      rel.firmaImg = firmaImgUrl;
+      rel.firmaFotoImg = firmaFotoUrl;
+      rel.firmaTipo = STATE.firmaMetodo;
+      rel.firmaNombreTexto = STATE.firmaMetodo==="nombre" ? STATE.firmaNombreTexto : "";
+      rel.fotosEliminadas = false;
+      rel.fechaFirma = new Date().toISOString();
+      rel.estadoVendedor = "pendiente";
+      await saveRelevamientoActual(a.id);
+    }
+    STATE.firmaAcuerdo=false; STATE.firmaMetodo="dibujo"; STATE.firmaNombreTexto="";
+    showToast("Enviado al vendedor "+(c.vendedor||"")+" para su aprobación");
+    STATE.screen="clientes"; render();
+  }
+
+  const firmaFotoInput = document.getElementById("firmaFotoInput");
+  if(firmaFotoInput){
+    firmaFotoInput.addEventListener("change",(e)=>{
+      const file = e.target.files[0];
+      if(!file) return; // el cliente canceló la cámara: no se envía nada todavía
+      handleFile(file, (dataUrl)=>{ finalizarEnvioFirma(dataUrl); });
+    });
+  }
+
+  const enviarVendedorBtn = document.getElementById("enviarVendedor");
+  if(enviarVendedorBtn){
+    enviarVendedorBtn.addEventListener("click", ()=>{
+      if(STATE.firmaMetodo==="dibujo" && !hasSignature()){ showToast("Falta firmar en la pantalla"); return; }
+      if(STATE.firmaMetodo==="nombre" && !(STATE.firmaNombreTexto||"").trim()){ showToast("Escribí el nombre de quien confirma"); return; }
+      // dispara la cámara frontal automáticamente; al tomar la foto se completa el envío
+      document.getElementById("firmaFotoInput").click();
+    });
+  }
+
+  $app.querySelectorAll("[data-aprobar]").forEach(el=>{
+    el.addEventListener("click", async ()=>{
+      STATE.relevamientos[el.dataset.aprobar].estadoVendedor = "aprobado";
+      await saveRelevamientoActual(el.dataset.aprobar);
+      render();
+    });
+  });
+  $app.querySelectorAll("[data-rechazar]").forEach(el=>{
+    el.addEventListener("click", async ()=>{
+      STATE.relevamientos[el.dataset.rechazar].estadoVendedor = "rechazado";
+      await saveRelevamientoActual(el.dataset.rechazar);
+      render();
+    });
+  });
+
+  const exportarBtn = document.getElementById("exportarBtn");
+  if(exportarBtn){ exportarBtn.addEventListener("click", exportarExcel); }
+}
+
+/* ---------------------------------------------------------------
+   FOTO: redimensiona y comprime
+--------------------------------------------------------------- */
+function handleFile(file, cb){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxW = 900;
+      const scale = Math.min(1, maxW/img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width*scale;
+      canvas.height = img.height*scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      cb(canvas.toDataURL("image/jpeg",0.7));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---------------------------------------------------------------
+   FIRMA (canvas)
+--------------------------------------------------------------- */
+let sigCtx=null, sigDrawing=false, sigHas=false;
+function setupSignaturePad(){
+  const canvas = document.getElementById("sigPad");
+  if(!canvas) return;
+  const ratio = window.devicePixelRatio||1;
+  canvas.width = canvas.clientWidth*ratio;
+  canvas.height = canvas.clientHeight*ratio;
+  sigCtx = canvas.getContext("2d");
+  sigCtx.scale(ratio,ratio);
+  sigCtx.lineWidth=2.4; sigCtx.lineCap="round"; sigCtx.strokeStyle="#1c2b24";
+  sigHas=false;
+  function pos(e){ const r = canvas.getBoundingClientRect(); const t = e.touches ? e.touches[0] : e; return {x:t.clientX-r.left, y:t.clientY-r.top}; }
+  function start(e){ sigDrawing=true; sigHas=true; const p=pos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x,p.y); e.preventDefault(); }
+  function move(e){ if(!sigDrawing) return; const p=pos(e); sigCtx.lineTo(p.x,p.y); sigCtx.stroke(); e.preventDefault(); }
+  function end(){ sigDrawing=false; }
+  canvas.addEventListener("mousedown",start); canvas.addEventListener("mousemove",move); window.addEventListener("mouseup",end);
+  canvas.addEventListener("touchstart",start,{passive:false}); canvas.addEventListener("touchmove",move,{passive:false}); canvas.addEventListener("touchend",end);
+}
+function clearSignature(){ const canvas = document.getElementById("sigPad"); if(!canvas||!sigCtx) return; sigCtx.clearRect(0,0,canvas.width,canvas.height); sigHas=false; }
+function hasSignature(){ return sigHas; }
+function getSignatureDataUrl(){ return document.getElementById("sigPad").toDataURL("image/png"); }
+
+function generarImagenNombre(nombre){
+  const canvas = document.createElement("canvas");
+  canvas.width = 600; canvas.height = 200;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fdfcf9"; ctx.fillRect(0,0,600,200);
+  ctx.strokeStyle = "#d8d2c2"; ctx.lineWidth=2; ctx.strokeRect(1,1,598,198);
+  ctx.fillStyle = "#1c2b24";
+  ctx.font = "italic 40px Georgia, 'Times New Roman', serif";
+  ctx.textBaseline = "middle";
+  ctx.fillText(nombre || "", 24, 95, 552);
+  ctx.font = "12px sans-serif"; ctx.fillStyle = "#8a9188";
+  ctx.fillText("Confirmado escribiendo el nombre — " + new Date().toLocaleString(), 24, 160, 552);
+  return canvas.toDataURL("image/png");
+}
+
+/* ---------------------------------------------------------------
+   EXPORTAR EXCEL (solo la ciudad de la sesión activa)
+--------------------------------------------------------------- */
+function mesActualAbrev(){
+  const meses = ["ENE","FEB","MAR","ABR","MAY","JUN","JUL","AGO","SEP","OCT","NOV","DIC"];
+  return meses[new Date().getMonth()];
+}
+
+/* Genera la hoja de una ciudad con el mismo layout que la planilla base:
+   fila1 = VENDEDOR (por columna de cliente), fila2 = código de cliente,
+   fila3 = encabezados de producto + nombre de cliente, filas siguientes = catálogo. */
+function buildCitySheetRows(clientesCiudad){
+  const porVendedor = {};
+  clientesCiudad.forEach(c=>{
+    const v = c.vendedor || "Sin vendedor";
+    porVendedor[v] = porVendedor[v]||[];
+    porVendedor[v].push(c);
+  });
+
+  const filaVendedor = ["","","","","","VENDEDOR"];
+  const filaCodigo = ["codigo de cliente","","","","","",];
+  const filaHeader = ["N°","Marca","Categoría","Formato","Observaciones","LINEA 3"];
+  const colClientes = [];
+  Object.entries(porVendedor).forEach(([vendedor, clientes])=>{
+    clientes.forEach(c=>{
+      filaVendedor.push(vendedor);
+      filaCodigo.push(c.codigo || "");
+      filaHeader.push(c.nombre);
+      colClientes.push(c);
+    });
+  });
+  filaVendedor.push("");
+  filaCodigo.push("");
+  filaHeader.push("TOTAL STOCK "+mesActualAbrev());
+
+  const rows = [filaVendedor, filaCodigo, filaHeader];
+  let ultimaMarca = null;
+  SKU_CATALOG.forEach(s=>{
+    const marcaCelda = s.marcaShown ? s.marca : "";
+    const linea3 = (s.categoria+" "+s.formato).trim();
+    const row = [s.n, marcaCelda, s.categoria, s.formato, s.observaciones, linea3];
+    let totalFila = 0;
+    colClientes.forEach(c=>{
+      const stock = stockPorSkuCliente(c);
+      const val = stock[s.id] || 0;
+      totalFila += val;
+      row.push(val || "");
+    });
+    row.push(totalFila || "");
+    rows.push(row);
+  });
+  return rows;
+}
+
+function exportarExcel(){
+  const wb = XLSX.utils.book_new();
+  const esNacional = STATE.ciudad===NACIONAL;
+  const ciudadesAExportar = esNacional ? CIUDADES : [STATE.ciudad];
+  const clientesAExportar = esNacional ? STATE.clientes : STATE.clientes.filter(c=>c.ciudad===STATE.ciudad);
+
+  ciudadesAExportar.forEach(ciudad=>{
+    const clientesCiudad = STATE.clientes.filter(c=>c.ciudad===ciudad);
+    if(clientesCiudad.length===0) return;
+    const rows = buildCitySheetRows(clientesCiudad);
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), ciudad);
+  });
+
+  const detalle = [["Ciudad","Cliente","Vendedor","Almacén","Fecha conteo","Relevador","Latitud","Longitud","Precisión (m)","Fotos vigentes","Fotos eliminadas por vencimiento","Cliente conforme","Tipo de firma","Firma registrada","Estado vendedor"]];
+  clientesAExportar.forEach(c=>{
+    (c.almacenes||[]).forEach(a=>{
+      const r = STATE.relevamientos[a.id] || {};
+      detalle.push([
+        c.ciudad, c.nombre, c.vendedor||"", a.nombre,
+        r.fechaConteo? new Date(r.fechaConteo).toLocaleString():"",
+        r.relevadorNombre||"",
+        r.gps? r.gps.lat:"", r.gps? r.gps.lng:"", r.gps? Math.round(r.gps.acc):"",
+        r.fotos? r.fotos.filter(Boolean).length:0,
+        r.fotosEliminadas? "Sí":"No",
+        r.clienteAcuerdo===true?"Sí":r.clienteAcuerdo===false?"No":"",
+        r.firmaTipo==="nombre"?"Nombre escrito":r.firmaTipo==="dibujo"?"Firma en pantalla":"",
+        r.firmaImg?"Sí":"No",
+        r.estadoVendedor||"borrador",
+      ]);
+    });
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detalle), "Detalle");
+
+  const dash = [["Ciudad","Cliente","Vendedor","Stock total (u.)","Venta prom. mensual (u.)","Días de stock promedio","Nivel"]];
+  clientesAExportar.forEach(c=>{
+    const stock = stockPorSkuCliente(c);
+    const stockTotal = Object.values(stock).reduce((a,b)=>a+b,0);
+    const ventas = c.ventasProm||{};
+    const ventaTotal = Object.values(ventas).reduce((a,b)=>a+(Number(b)||0),0);
+    const diasArr = Object.entries(stock).map(([sku,q])=>diasStockSku(q, ventas[sku])).filter(d=>d!=null);
+    const diasProm = diasArr.length? Math.round((diasArr.reduce((a,b)=>a+b,0)/diasArr.length)*10)/10 : "";
+    const [nivel] = diasProm!==""? nivelRiesgo(diasProm) : ["sin dato"];
+    dash.push([c.ciudad, c.nombre, c.vendedor||"", stockTotal, ventaTotal||"", diasProm, nivel]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dash), "Dashboard");
+
+  const nombreArchivo = "Relevamiento_"+(esNacional?"TODAS_LAS_CIUDADES":STATE.ciudad)+"_"+new Date().toISOString().slice(0,10)+".xlsx";
+  XLSX.writeFile(wb, nombreArchivo);
+}
+
+/* ---------------------------------------------------------------
+   INIT
+--------------------------------------------------------------- */
+(async function init(){
+  await loadAll();
+  render();
+})();
+</script>
+</body>
+</html>
