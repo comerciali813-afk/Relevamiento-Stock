@@ -49,6 +49,10 @@ button.btn:disabled{opacity:.45;cursor:not-allowed;}
 .btn-amber{background:var(--amber);color:#3a2500;}
 .row-btns{display:flex;gap:10px;margin-top:14px;}
 .list-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;background:#fdfcf9;cursor:pointer;}
+.vendor-group{margin-bottom:18px;}
+.vendor-heading{display:flex;justify-content:space-between;align-items:baseline;padding:0 2px 8px;border-bottom:1.5px solid var(--brand);margin-bottom:10px;}
+.vendor-heading span:first-child{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--brand-dark);}
+.vendor-phone{font-size:11.5px;color:#6b756f;font-weight:600;}
 .list-item:active{background:var(--brand-soft);}
 .list-item .meta{font-size:12px;color:#6b756f;margin-top:2px;}
 .chev{color:#9aa39c;font-size:18px;}
@@ -120,7 +124,7 @@ details.cat-block summary .count{font-weight:600;text-transform:none;letter-spac
 /* ---------------------------------------------------------------
    CATALOGO DE SKUs
 --------------------------------------------------------------- */
-const SKU_CATALOG_RAW = [[1, "TODO BRILLO POLVO", 1, "Detergente en Polvo", "140 Gr", ""], [2, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "500 Gr", ""], [3, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "650 Gr", ""], [4, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [5, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "9.5", ""], [6, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "4.8 Kg", ""], [7, "TODO BRILLO PLUS POLVO", 1, "Detergente en Polvo", "650 Gr", ""], [8, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [9, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "4.5 Kg", ""], [10, "TODO BRILLO SUAVIZANTE DE ROPA", 1, "suavizante de ropa", "900 mL", "Doypack"], [11, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "3,8 mL", ""], [12, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "1700 mL", ""], [13, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 1, "suavizante de ropa", "800ml", ""], [14, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 0, "suavizante de ropa", "900ml", ""], [15, "TODO BRILLO VAJILLERO", 1, "Lavavajillas", "450 mL", "Doypack"], [16, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "900 mL", "Doypack"], [17, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "750 mL", "Botella"], [18, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "1200 mL", "Botella"], [19, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "2000 mL", "Botella"], [20, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "5 L.", "Bidon"], [21, "TODO BRILLO PLUS VAJILLERO", 1, "Lavavajillas", "5L", ""], [22, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "2L", ""], [23, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "1050ml", ""], [24, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "900ml", ""], [25, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "600ml", ""], [26, "TODO BRILLO ANTIGRASA", 1, "Antigrasa", "830 mL", "Gatillo"], [27, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "830 mL", "Recarga"], [28, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "900 mL", "Doypack"], [29, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "5 L.", ""], [30, "TODO BRILLO ANTISARRO", 1, "Antisarro", "550 mL", ""], [31, "TODO BRILLO LIMPIA BAÑOS", 1, "Limpia baño", "850 mL", "Gatillo"], [32, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "850 mL", "Recarga"], [33, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "5 L.", "Bidon"], [34, "TODO BRILLO LIMPIA VIDRIO", 1, "Limpia Vidrio", "850 mL", "Gatillo"], [35, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "850 mL", "Recarga"], [36, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "5 L.", ""], [37, "TODO BRILLO LUSTRA MUEBLES", 1, "Lustra Mueble", "850 mL", "Gatillo"], [38, "LIMPIA PISOS", 1, "Limpia Pisos", "1800 mL", ""], [39, "LIMPIA PISOS", 0, "Limpia Pisos", "5000 mL", ""], [40, "TODO BRILLO AMBIENTADORES", 1, "Ambientadores en aerosol", "360 cc", ""], [41, "TODO BRILLO AMBIENTADORES", 0, "Ambientadores en aerosol", "500 cc", ""], [42, "TODO BRILLO DESINFECTANTE", 1, "Desinfectante en aerosol", "360 cc", ""], [43, "LINEA TODO BRILLO LAVADO", 1, "TB Jabon de Lavar Ropa", "200 GR", ""], [44, "TYSON", 1, "Insecticida", "360 cc", "Aerosol"], [45, "TYSON", 0, "Insecticida", "500 cc", "Aerosol"], [46, "CARISSA CORPORAL", 1, "Jabon Liquido", "250 mL", "Mini Doypack"], [47, "CARISSA CORPORAL", 0, "Jabon Liquido", "360 mL", ""], [48, "CARISSA CORPORAL", 0, "Jabon Liquido", "900 mL", "Doypack"], [49, "CARISSA CORPORAL", 0, "Emulsion", "320 mL", "Botella"], [50, "CARISSA CORPORAL", 0, "Emulsion", "600 mL", "Botella"], [51, "CARISSA CORPORAL", 0, "Sanitizador", "360 mL", ""], [52, "CARISSA CORPORAL", 0, "Sanitizador", "900 mL", "Doypack"], [53, "CARISSA CORPORAL", 0, "Sanitizador", "5 L.", ""], [54, "CARISSA DESODORANTE EN CREMA", 1, "Desodorante en crema", "60gr", ""], [55, "LIN. CARISSA IMPORTADO", 1, "Carissa JT", "125gr", ""], [56, "LIN. CARISSA IMPORTADO", 0, "CARISSA JT TRIPACK", "375 g", ""], [57, "CARISSA CAPILAR", 1, "sachet mix 1x48", "60 mL", "x48"], [58, "CARISSA CAPILAR", 0, "Shampoo", "450 mL", "Mini Doypack"], [59, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Doypack"], [60, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Doypack"], [61, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Botella"], [62, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Botella"], [63, "CARISSA SONRISA", 1, "CARISSA SONRISA", "180g", ""], [64, "CARISSA SONRISA", 0, "CARISSA SONRISA", "50g", ""], [65, "REVIVE", 1, "Shampoo Botella", "340mL", "Botella"], [66, "REVIVE", 0, "Acondicionador Botella", "340mL", "Botella"], [67, "REVIVE", 0, "Sachet", "75 ml", "Sachet"], [68, "REVIVE DEO", 1, "REVIVE MEN DEO AERO 150", "150ml", ""], [69, "REVIVE DEO", 0, "REVIVE WOMEN DEO AERO", "150ml", ""], [70, "FIXER", 1, "Shampoo Fixer", "340 mL", "Fixer"], [71, "FIXER", 0, "Gel para el cabello", "50 g", "cabello"], [72, "FIXER", 0, "Gel para el cabello", "250g", "cabello"], [73, "FIXER", 0, "Gel para el cabello", "500 g", "cabello"], [74, "FIXER", 0, "Gel para el cabello", "1 Kg", "cabello"], [75, "TAI ALOE", 1, "Aloe Vera Tai", "550 mL", ""], [76, "ESPONJA ESFREBOM", 1, "Esponja Esfrebom", "", "Pack x4"], [77, "TODO BRILLO", 1, "Esponja", "", "Pack x4"], [78, "FOUR LOKO", 1, "Four Loko", "473 mL", ""], [79, "FOUR LOKO", 0, "Four Loko", "695 mL", ""], [80, "ALPHA", 1, "ALPHA TERMOGENICO", "355ml", ""], [81, "ALPHA", 0, "ALPHA PRE ENTRENO", "355ml", ""], [82, "ALPHA", 0, "ALPHA ENERGIZANTE", "473ml", ""], [83, "ALPHA", 0, "ALPHA ENERGIZANTE S/AZUCAR", "", ""], [84, "ALPHA", 0, "ALPHA ENERGIZANTE", "4736ml", ""], [85, "ALPHA", 0, "ALPHA ENERGIZANTE", "355ml", ""], [86, "ALPHA", 0, "ALPHA ENERGIZANTE S/AZUCAR", "355ml", ""]];
+const SKU_CATALOG_RAW = [[1, "TODO BRILLO POLVO", 1, "Detergente en Polvo", "140 Gr", ""], [2, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "500 Gr", ""], [3, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "650 Gr", ""], [4, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [5, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "9.5", ""], [6, "TODO BRILLO POLVO", 0, "Detergente en Polvo", "4.8 Kg", ""], [7, "TODO BRILLO PLUS POLVO", 1, "Detergente en Polvo", "650 Gr", ""], [8, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "1.8 Kg", ""], [9, "TODO BRILLO PLUS POLVO", 0, "Detergente en Polvo", "4.5 Kg", ""], [10, "TODO BRILLO SUAVIZANTE DE ROPA", 1, "suavizante de ropa", "900 mL", "Doypack"], [11, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "3,8 mL", ""], [12, "TODO BRILLO SUAVIZANTE DE ROPA", 0, "suavizante de ropa", "1700 mL", ""], [13, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 1, "suavizante de ropa", "800ml", ""], [14, "TODO BRILLO SUAVIZANTE PLUS DE ROPA", 0, "suavizante de ropa", "900ml", ""], [15, "TODO BRILLO VAJILLERO", 1, "Lavavajillas", "450 mL", "Doypack"], [16, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "900 mL", "Doypack"], [17, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "750 mL", "Botella"], [18, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "1200 mL", "Botella"], [19, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "2000 mL", "Botella"], [20, "TODO BRILLO VAJILLERO", 0, "Lavavajillas", "5 L.", "Bidon"], [21, "TODO BRILLO PLUS VAJILLERO", 1, "Lavavajillas", "5L", ""], [22, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "2L", ""], [23, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "1050ml", ""], [24, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "900ml", ""], [25, "TODO BRILLO PLUS VAJILLERO", 0, "Lavavajillas", "600ml", ""], [26, "TODO BRILLO ANTIGRASA", 1, "Antigrasa", "830 mL", "Gatillo"], [27, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "830 mL", "Recarga"], [28, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "900 mL", "Doypack"], [29, "TODO BRILLO ANTIGRASA", 0, "Antigrasa", "5 L.", ""], [30, "TODO BRILLO ANTISARRO", 1, "Antisarro", "550 mL", ""], [31, "TODO BRILLO LIMPIA BAÑOS", 1, "Limpia baño", "850 mL", "Gatillo"], [32, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "850 mL", "Recarga"], [33, "TODO BRILLO LIMPIA BAÑOS", 0, "Limpia baño", "5 L.", "Bidon"], [34, "TODO BRILLO LIMPIA VIDRIO", 1, "Limpia Vidrio", "850 mL", "Gatillo"], [35, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "850 mL", "Recarga"], [36, "TODO BRILLO LIMPIA VIDRIO", 0, "Limpia Vidrio", "5 L.", ""], [37, "TODO BRILLO LUSTRA MUEBLES", 1, "Lustra Mueble", "850 mL", "Gatillo"], [38, "LIMPIA PISOS", 1, "Limpia Pisos", "1800 mL", ""], [39, "LIMPIA PISOS", 0, "Limpia Pisos", "5000 mL", ""], [40, "TODO BRILLO AMBIENTADORES", 1, "Ambientadores en aerosol", "360 cc", ""], [41, "TODO BRILLO AMBIENTADORES", 0, "Ambientadores en aerosol", "500 cc", ""], [42, "TODO BRILLO DESINFECTANTE", 1, "Desinfectante en aerosol", "360 cc", ""], [43, "LINEA TODO BRILLO LAVADO", 1, "TB Jabon de Lavar Ropa", "200 GR", ""], [44, "TYSON", 1, "Insecticida", "360 cc", "Aerosol"], [45, "TYSON", 0, "Insecticida", "500 cc", "Aerosol"], [46, "CARISSA CORPORAL", 1, "Jabon Liquido", "250 mL", "Mini Doypack"], [47, "CARISSA CORPORAL", 0, "Jabon Liquido", "360 mL", ""], [48, "CARISSA CORPORAL", 0, "Jabon Liquido", "900 mL", "Doypack"], [49, "CARISSA CORPORAL", 0, "Emulsion", "320 mL", "Botella"], [50, "CARISSA CORPORAL", 0, "Emulsion", "600 mL", "Botella"], [51, "CARISSA CORPORAL", 0, "Sanitizador", "360 mL", ""], [52, "CARISSA CORPORAL", 0, "Sanitizador", "900 mL", "Doypack"], [53, "CARISSA CORPORAL", 0, "Sanitizador", "5 L.", ""], [54, "CARISSA DESODORANTE EN CREMA", 1, "Desodorante en crema", "60gr", ""], [55, "LIN. CARISSA IMPORTADO", 1, "Carissa JT", "125gr", ""], [56, "LIN. CARISSA IMPORTADO", 0, "CARISSA JT TRIPACK", "375 g", ""], [57, "CARISSA CAPILAR", 1, "sachet mix 1x48", "60 mL", "x48"], [58, "CARISSA CAPILAR", 0, "Shampoo", "450 mL", "Mini Doypack"], [59, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Doypack"], [60, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Doypack"], [61, "CARISSA CAPILAR", 0, "Shampoo", "800 mL", "Botella"], [62, "CARISSA CAPILAR", 0, "Acondicionador", "800 mL", "Botella"], [63, "CARISSA SONRISA", 1, "CARISSA SONRISA", "180g", ""], [64, "CARISSA SONRISA", 0, "CARISSA SONRISA", "50g", ""], [65, "REVIVE", 1, "Shampoo Botella", "340mL", "Botella"], [66, "REVIVE", 0, "Acondicionador Botella", "340mL", "Botella"], [67, "REVIVE", 0, "Sachet", "75 ml", "Sachet"], [68, "REVIVE DEO", 1, "REVIVE MEN DEO AERO 150", "150ml", ""], [69, "REVIVE DEO", 0, "REVIVE WOMEN DEO AERO", "150ml", ""], [70, "FIXER", 1, "Shampoo Fixer", "340 mL", "Fixer"], [71, "FIXER", 0, "Gel para el cabello", "50 g", "cabello"], [72, "FIXER", 0, "Gel para el cabello", "250g", "cabello"], [73, "FIXER", 0, "Gel para el cabello", "500 g", "cabello"], [74, "FIXER", 0, "Gel para el cabello", "1 Kg", "cabello"], [75, "TAI ALOE", 1, "Aloe Vera Tai", "550 mL", ""], [76, "ESPONJA ESFREBOM", 1, "Esponja Esfrebom", "", "Pack x4"], [77, "TODO BRILLO", 1, "Esponja", "", "Pack x4"], [78, "FOUR LOKO", 1, "Four Loko", "473 mL", ""], [79, "FOUR LOKO", 0, "Four Loko", "695 mL", ""], [80, "ALPHA", 1, "ALPHA TERMOGENICO", "355ml", ""], [81, "ALPHA", 0, "ALPHA PRE ENTRENO", "355ml", ""], [82, "ALPHA", 0, "ALPHA ENERGIZANTE", "473ml", ""], [83, "ALPHA", 0, "ALPHA ENERGIZANTE S/AZUCAR", "", ""]];
 
 const SKU_CATALOG = SKU_CATALOG_RAW.map(r=>({
   id: "sku_"+r[0], n:r[0], marca:r[1], marcaShown: !!r[2], categoria:r[3], formato:r[4], observaciones:r[5],
@@ -128,14 +132,33 @@ const SKU_CATALOG = SKU_CATALOG_RAW.map(r=>({
 }));
 
 const CATEGORIES = [...new Set(SKU_CATALOG.map(s=>s.categoria))];
-const CIUDADES = ["CBBA","LPZ","SCZ","SUR"];
+const CIUDADES = ["CBBA","LPZ","SCZ","ORURO","POTOSI","SUCRE","TARIJA"];
 const NACIONAL = "NACIONAL";
+const ADMIN = "ADMIN";
 
 /* Por ahora la app no pide contraseña (fase de pruebas): solo se elige ciudad y nombre.
    Cuando quieran volver a exigir un PIN por usuario, avisenme y lo reactivo. */
 
 /* Clientes precargados desde la planilla Trade Stock 2026 JUL (uno por ciudad) */
-const SEED_CLIENTES = {"CBBA":[{"nombre":"MAGUA","codigo":"106757","vendedor":"JOSE SILES"},{"nombre":"TRALOCOM","codigo":"106992","vendedor":"JOSE SILES"},{"nombre":"IS LOGISTIC","codigo":"106943","vendedor":"JOSE SILES"},{"nombre":"BJ","codigo":"106201","vendedor":"YASKARA MARTINEZ"},{"nombre":"TSC","codigo":"106924","vendedor":"YASKARA MARTINEZ"},{"nombre":"ELSA AIROJA","codigo":"106621","vendedor":"ELVIS FLORES"},{"nombre":"PATRICIA SAINZ","codigo":"","vendedor":"ELVIS FLORES"},{"nombre":"RUTH MATURANO","codigo":"102042","vendedor":"ELVIS FLORES"},{"nombre":"CIDAR FLORES","codigo":"106574","vendedor":"FREDDY PACHECO"},{"nombre":"JUAN MARCELO AQUINO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SANDRA TORRICO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SANDRA ZENTENO","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"LITZI TICONA","codigo":"","vendedor":"FREDDY PACHECO"},{"nombre":"SILVIA HELSEY","codigo":"104202","vendedor":"BRIAN ROCHA"},{"nombre":"ARIANA PEREZ","codigo":"100333","vendedor":"BRIAN ROCHA"},{"nombre":"MARIA TELLES","codigo":"","vendedor":"BRIAN ROCHA"},{"nombre":"ERICK ROCHA","codigo":"","vendedor":"BRIAN ROCHA"}],"LPZ":[{"nombre":"JOSE LUIS GUTIERREZ","codigo":"210175","vendedor":"Alvaro Guzman"},{"nombre":"UFMAGU","codigo":"210246","vendedor":"Alvaro Guzman"},{"nombre":"ARMINIA MAMANI","codigo":"210014","vendedor":"Gabriela Orellana"},{"nombre":"VLADICOM","codigo":"","vendedor":"Mauricio Gutiérrez"},{"nombre":"NORDIX","codigo":"209623","vendedor":"Camilo Arias"},{"nombre":"Ariel Cuenca GRUPO ESTRATEGO BOLIVIA","codigo":"","vendedor":"Camilo Arias"},{"nombre":"MB WEYMAR","codigo":"","vendedor":"Camilo Arias"},{"nombre":"JUAN CALLE","codigo":"209763","vendedor":"CLAUDIO CHASQUI"}],"SCZ":[{"nombre":"JOSE QUISBERT","codigo":"","vendedor":"RAMADA"},{"nombre":"DAVID GUTIERREZ","codigo":"","vendedor":"RAMADA"},{"nombre":"EUDI COLODRO","codigo":"","vendedor":"ABASTO"},{"nombre":"ISABEL QUISPE","codigo":"","vendedor":"ABASTO"},{"nombre":"NATALY RODRIGUEZ","codigo":"","vendedor":"ABASTO"},{"nombre":"JUDITH CONDORI","codigo":"","vendedor":"ABASTO"},{"nombre":"CARMEN GARCIA","codigo":"","vendedor":"ABASTO"},{"nombre":"ROLANDO MENDOZA","codigo":"","vendedor":"ABASTO"},{"nombre":"LOF","codigo":"","vendedor":"ABASTO"},{"nombre":"HUDSON RICHAR FLORES","codigo":"","vendedor":"LOS POZOS"},{"nombre":"JAVIER PAUCARI","codigo":"","vendedor":"LOS POZOS"},{"nombre":"CORPORACION LOGISTICA","codigo":"","vendedor":"MUTUALISTA"},{"nombre":"MELQUI","codigo":"","vendedor":"MUTUALISTA"},{"nombre":"ALCIDES JOHANSIN","codigo":"","vendedor":"MONTERO"},{"nombre":"DRY FAST","codigo":"","vendedor":"MONTERO"},{"nombre":"ORLANDO QUISPE","codigo":"","vendedor":"MONTERO"},{"nombre":"FREDDY WILLAM","codigo":"","vendedor":"MONTERO"},{"nombre":"SILVIA ACHA","codigo":"","vendedor":"MONTERO"},{"nombre":"FLEMM","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"VALESCO","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"DRON/EFIFAST","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"HAKA","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"JOSE CARLOS FLORES","codigo":"","vendedor":"DISTRIBUIDORES"},{"nombre":"MARIA DE LOS ANGELES","codigo":"","vendedor":"DISTRIBUIDORES"}],"SUR":[{"nombre":"POSSIBLE","codigo":"","vendedor":"ORURO"},{"nombre":"CBIL CUATRODIEZ","codigo":"","vendedor":"POTOSÍ"},{"nombre":"KAREN GUTIÉRREZ","codigo":"","vendedor":"SUCRE"},{"nombre":"MACROSUR SRL.","codigo":"","vendedor":"TARIJA"}]};
+const SEED_CLIENTES = {"CBBA":[{"nombre":"MAGUA","codigo":"106757","vendedor":"JOSE SILES","telefono":"77483827"},{"nombre":"IS LOGISTIC","codigo":"106943","vendedor":"JOSE SILES","telefono":"77483827"},{"nombre":"BJ","codigo":"106201","vendedor":"YASKARA MARTINEZ","telefono":"69517251"},{"nombre":"TSC","codigo":"106924","vendedor":"YASKARA MARTINEZ","telefono":"69517251"},{"nombre":"PATRICIA SAINZ","codigo":"","vendedor":"ELVIS FLORES","telefono":"69455280"},{"nombre":"CIDAR FLORES","codigo":"106574","vendedor":"FREDDY PACHECO","telefono":"77496502"},{"nombre":"SANDRA TORRICO","codigo":"104886","vendedor":"FREDDY PACHECO","telefono":"77496502"},{"nombre":"SANDRA ZENTENO","codigo":"","vendedor":"FREDDY PACHECO","telefono":"77496502"},{"nombre":"MAURICIO SAUL AYALA","codigo":"106595","vendedor":"FREDDY PACHECO","telefono":"77496502"},{"nombre":"JUANA ESPINOZA","codigo":"","vendedor":"FREDDY PACHECO","telefono":"77496502"},{"nombre":"MARIA TELLES","codigo":"","vendedor":"BRIAN ROCHA","telefono":"77432325"},{"nombre":"ERICK ROCHA","codigo":"","vendedor":"HENRY VILDOSO","telefono":"62271392"},{"nombre":"TRALOCOM","codigo":"106992","vendedor":"HENRY VILDOSO","telefono":"62271392"}],"LPZ":[{"nombre":"JOSE LUIS GUTIERREZ","codigo":"210175","vendedor":"Alvaro Guzman","telefono":"77233761"},{"nombre":"UFMAGU","codigo":"210246","vendedor":"Alvaro Guzman","telefono":"77233761"},{"nombre":"ARMINIA MAMANI","codigo":"210014","vendedor":"Gabriela Orellana","telefono":""},{"nombre":"VLADICOM S.R.L.","codigo":"210228","vendedor":"Mauricio Gutiérrez","telefono":""},{"nombre":"NORDIX","codigo":"209623","vendedor":"Camilo Arias","telefono":"77529711"},{"nombre":"GRUPO ESTRATEGO BOLIVIA S.R.L.","codigo":"210138","vendedor":"Camilo Arias","telefono":"77529711"},{"nombre":"MB WEYMAR","codigo":"","vendedor":"Camilo Arias","telefono":"77529711"},{"nombre":"JUAN CALLE","codigo":"209763","vendedor":"CLAUDIO CHASQUI","telefono":"76762662"}],"SCZ":[{"nombre":"JOSE QUISBERT","codigo":"","vendedor":"RAMADA","telefono":""},{"nombre":"DAVID GUTIERREZ","codigo":"","vendedor":"RAMADA","telefono":""},{"nombre":"EUDI COLODRO","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"ISABEL QUISPE","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"NATALY RODRIGUEZ","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"JUDITH CONDORI","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"CARMEN GARCIA","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"ROLANDO MENDOZA","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"LOF","codigo":"","vendedor":"ABASTO","telefono":""},{"nombre":"HUDSON RICHAR FLORES","codigo":"","vendedor":"LOS POZOS","telefono":""},{"nombre":"JAVIER PAUCARI","codigo":"","vendedor":"LOS POZOS","telefono":""},{"nombre":"CORPORACION LOGISTICA","codigo":"","vendedor":"MUTUALISTA","telefono":""},{"nombre":"MELQUI","codigo":"","vendedor":"MUTUALISTA","telefono":""},{"nombre":"ALCIDES JOHANSIN","codigo":"","vendedor":"MONTERO","telefono":""},{"nombre":"DRY FAST S.R.L.","codigo":"27786","vendedor":"MONTERO","telefono":""},{"nombre":"ORLANDO QUISPE","codigo":"","vendedor":"MONTERO","telefono":""},{"nombre":"FREDDY WILLAM","codigo":"","vendedor":"MONTERO","telefono":""},{"nombre":"SILVIA ACHA","codigo":"","vendedor":"MONTERO","telefono":""},{"nombre":"FLEMM S.R.L.","codigo":"27823","vendedor":"DISTRIBUIDORES","telefono":""},{"nombre":"VALESCO","codigo":"","vendedor":"DISTRIBUIDORES","telefono":""},{"nombre":"EFIFAST S.R.L.","codigo":"26705","vendedor":"DISTRIBUIDORES","telefono":""},{"nombre":"HAKA S.R.L","codigo":"19170","vendedor":"DISTRIBUIDORES","telefono":""},{"nombre":"JOSE CARLOS FLORES","codigo":"","vendedor":"DISTRIBUIDORES","telefono":""},{"nombre":"MARIA DE LOS ANGELES","codigo":"","vendedor":"DISTRIBUIDORES","telefono":""}],"ORURO":[{"nombre":"POSSIBLE REPRESENTANTES Y DISTRIBUIDORES S.R.L","codigo":"106755","vendedor":"","telefono":""}],"POTOSI":[{"nombre":"CBIL CUATRODIEZ S.R.L.","codigo":"106972","vendedor":"","telefono":""}],"SUCRE":[{"nombre":"KAREN GUTIÉRREZ","codigo":"","vendedor":"","telefono":""}],"TARIJA":[{"nombre":"MACROSUR DISTRIBUIDORES S.R.L.","codigo":"80134","vendedor":"","telefono":""}]};
+
+/* Totales históricos de stock por ciudad, tomados de las columnas "TOTAL STOCK" de
+   Trade_Stock_2026_AGOSTO.xlsx (últimos 4 meses: mayo a agosto). Oruro/Potosí/Sucre/Tarija
+   venían combinados como "SUR" en esa planilla, así que comparten el mismo histórico. */
+const HISTORICO_MENSUAL = {
+  meses: ["MAY","JUN","JUL","AGO"],
+  CBBA: [7441, 8642, 13283, 17355],
+  LPZ: [25308, 21580, 17500, 11731],
+  SCZ: [20951, 26480, 25102, 19460],
+  SUR_COMBINADO: [10496, 4323, 8807, 7979]
+};
+function historicoParaCiudad(ciudad){
+  if(ciudad===NACIONAL){
+    return HISTORICO_MENSUAL.meses.map((m,i)=> HISTORICO_MENSUAL.CBBA[i]+HISTORICO_MENSUAL.LPZ[i]+HISTORICO_MENSUAL.SCZ[i]+HISTORICO_MENSUAL.SUR_COMBINADO[i]);
+  }
+  if(["ORURO","POTOSI","SUCRE","TARIJA"].includes(ciudad)) return HISTORICO_MENSUAL.SUR_COMBINADO;
+  return HISTORICO_MENSUAL[ciudad] || null;
+}
 
 const DIAS_RETENCION_FOTOS = 30;
 
@@ -146,18 +169,48 @@ const DIAS_RETENCION_FOTOS = 30;
    Si la dejás vacía, la app funciona en MODO PRUEBA usando la memoria
    compartida de este chat de Claude (los datos no persisten fuera de acá).
 ================================================================= */
-const API_URL = "";
+const API_URL = "https://script.google.com/macros/s/AKfycbz0HsK830YKvNgWb777qRcZjdyekMLNp78s9tu8aS7R0XvnIeRE13QbiGERMwpQxwjo/exec";
 const USE_BACKEND = API_URL.trim().length > 0;
 
 /* ---------------------------------------------------------------
    PERSISTENCIA
+   - Dentro del chat de Claude: usa window.storage (memoria compartida del artefacto).
+   - Alojado afuera (GitHub Pages, etc.) sin backend todavía configurado: usa
+     localStorage del navegador, así los datos no se pierden al recargar la página
+     mientras hacés pruebas.
+   - Con API_URL configurado: usa el backend real (Google Sheets), ver DB_REMOTE.
 --------------------------------------------------------------- */
+const LS_PREFIX = "relevamiento_stock_";
+function tieneStorageClaude(){
+  try{ return typeof window!=="undefined" && !!window.storage && typeof window.storage.get==="function"; }
+  catch(e){ return false; }
+}
+function tieneLocalStorage(){
+  try{ return typeof window!=="undefined" && !!window.localStorage; }
+  catch(e){ return false; }
+}
+
 const DB_LOCAL = {
   async _get(key, fallback){
-    try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : fallback; }
-    catch(e){ return fallback; }
+    if(tieneStorageClaude()){
+      try{ const r = await window.storage.get(key, true); return r ? JSON.parse(r.value) : fallback; }
+      catch(e){ /* si falla, seguimos probando otras opciones abajo */ }
+    }
+    if(tieneLocalStorage()){
+      try{ const raw = window.localStorage.getItem(LS_PREFIX+key); return raw!=null ? JSON.parse(raw) : fallback; }
+      catch(e){ return fallback; }
+    }
+    return fallback;
   },
-  async _set(key, value){ try{ await window.storage.set(key, JSON.stringify(value), true); }catch(e){} },
+  async _set(key, value){
+    if(tieneStorageClaude()){
+      try{ await window.storage.set(key, JSON.stringify(value), true); return; }
+      catch(e){ /* si falla, seguimos probando otras opciones abajo */ }
+    }
+    if(tieneLocalStorage()){
+      try{ window.localStorage.setItem(LS_PREFIX+key, JSON.stringify(value)); }catch(e){}
+    }
+  },
   async getAll(){
     const clientes = await this._get("clientes", []);
     const relevamientos = await this._get("relevamientos", {});
@@ -209,6 +262,7 @@ let STATE = {
   relevamientos: {},
   toast: null,
   loginCiudadElegida: null,
+  ultimoEnvio: null,
   firmaAcuerdo: false,
   firmaMetodo: "dibujo",
   firmaNombreTexto: "",
@@ -236,7 +290,7 @@ function seedClientesFaltantes(){
     const existentes = new Set(STATE.clientes.filter(c=>c.ciudad===ciudad).map(c=>c.nombre.toUpperCase()));
     (SEED_CLIENTES[ciudad]||[]).forEach(sc=>{
       if(!existentes.has(sc.nombre.toUpperCase())){
-        STATE.clientes.push({ id: uid("cli"), ciudad, nombre: sc.nombre, codigo: sc.codigo||"", vendedor: sc.vendedor||"", almacenes: [], ventasProm:{} });
+        STATE.clientes.push({ id: uid("cli"), ciudad, nombre: sc.nombre, codigo: sc.codigo||"", vendedor: sc.vendedor||"", vendedorTelefono: sc.telefono||"", almacenes: [], ventasProm:{} });
         huboNuevos = true;
       }
     });
@@ -250,7 +304,7 @@ function emptyRelevamiento(almacenId){
   return {
     almacenId, conteos:{}, fotos:[null,null,null,null], gps:null,
     fechaCreacion:new Date().toISOString(), fechaConteo:null, relevadorNombre:"",
-    clienteAcuerdo:null, firmaImg:null, firmaFotoImg:null, fechaFirma:null,
+    clienteAcuerdo:null, firmaImg:null, fechaFirma:null,
     estadoVendedor:"borrador", comentarioVendedor:"", fotosEliminadas:false,
   };
 }
@@ -318,12 +372,14 @@ function render(){
   else if(STATE.screen==="almacenes") html = screenAlmacenes();
   else if(STATE.screen==="conteo") html = screenConteo();
   else if(STATE.screen==="ubicacionFotos") html = screenUbicacionFotos();
+  else if(STATE.screen==="almacenBloqueado") html = screenAlmacenBloqueado();
   else if(STATE.screen==="resumenCliente") html = screenResumenCliente();
   else if(STATE.screen==="firma") html = screenFirma();
   else if(STATE.screen==="vendedorLista") html = screenVendedorLista();
   else if(STATE.screen==="vendedorDetalle") html = screenVendedorDetalle();
   else if(STATE.screen==="ventasPromedio") html = screenVentasPromedio();
   else if(STATE.screen==="dashboard") html = screenDashboard();
+  else if(STATE.screen==="envioExitoso") html = screenEnvioExitoso();
   else if(STATE.screen==="exportar") html = screenExportar();
 
   $app.innerHTML = html + (STATE.toast ? `<div class="toast">${STATE.toast}</div>` : "");
@@ -341,9 +397,10 @@ function header(title, sub, showBack, backTo){
 
 function tabbar(active){
   if(!STATE.role) return "";
-  const base = STATE.role==="relevador"
-    ? [["clientes","🏬","Clientes"]]
-    : [["vendedorLista","✅","Aprobaciones"]];
+  let base;
+  if(STATE.role==="relevador") base = [["clientes","🏬","Clientes"]];
+  else if(STATE.role==="administrador") base = [["vendedorLista","🛠️","Panel"]];
+  else base = [["vendedorLista","✅","Aprobaciones"]];
   base.push(["dashboard","📊","Dashboard"], ["exportar","📤","Exportar"], ["login","↺","Salir"]);
   return `<nav class="tabbar">${base.map(([k,ic,lb])=>`<button data-nav="${k}" class="${active===k?'active':''}"><span class="ic">${ic}</span>${lb}</button>`).join("")}</nav>`;
 }
@@ -359,10 +416,16 @@ function screenLogin(){
     </div>
     <h2 class="section-title">1. Elegí tu usuario</h2>
     <div class="city-grid">
-      ${CIUDADES.map(c=>`<div class="city-btn ${elegida===c?'active':''}" data-elegir-ciudad="${c}">${c}</div>`).join("")}
+      ${CIUDADES.map(c=>`<div class="city-btn ${elegida===c?'active':''}" data-elegir-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
     </div>
-    <div class="city-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}" style="text-align:center;margin:-6px 0 16px;">👤 Gerencia Nacional <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve las 4 ciudades</span></div>
-    ${elegida ? `
+    <div class="city-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}" style="text-align:center;margin:-6px 0 10px;">👤 Gerencia Nacional <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve todas las ciudades</span></div>
+    <div class="city-btn ${elegida===ADMIN?'active':''}" data-elegir-ciudad="${ADMIN}" style="text-align:center;margin:0 0 16px;background:#efe6f7;border-color:#c9adde;">🔑 Administrador <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve y edita todas las ciudades, incluso lo ya enviado</span></div>
+    ${elegida===ADMIN ? `
+    <div class="card">
+      <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
+      <button class="btn btn-primary" data-role="administrador">Entrar como Administrador</button>
+    </div>
+    ` : elegida ? `
     <div class="card">
       <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
       <div class="row-btns">
@@ -375,24 +438,44 @@ function screenLogin(){
 
 function screenHome(){ STATE.screen = STATE.role==="vendedor" ? "vendedorLista" : "clientes"; return STATE.role==="vendedor" ? screenVendedorLista() : screenClientes(); }
 
-function nombreCiudad(c){ return c===NACIONAL ? "Gerencia Nacional" : c; }
+const NOMBRES_CIUDAD = { CBBA:"CBBA", LPZ:"LPZ", SCZ:"SCZ", ORURO:"Oruro", POTOSI:"Potosí", SUCRE:"Sucre", TARIJA:"Tarija" };
+function nombreCiudad(c){ return c===NACIONAL ? "Gerencia Nacional" : (NOMBRES_CIUDAD[c] || c); }
+
+function agruparPorVendedor(lista){
+  const grupos = [];
+  const indice = {};
+  lista.forEach(c=>{
+    const key = c.vendedor && c.vendedor.trim() ? c.vendedor.trim() : "Sin vendedor asignado";
+    if(indice[key]==null){
+      indice[key] = grupos.length;
+      grupos.push({ vendedor:key, telefono:c.vendedorTelefono||"", clientes:[] });
+    }
+    grupos[indice[key]].clientes.push(c);
+  });
+  return grupos;
+}
 
 function screenClientes(){
   const list = clientesDeMiCiudad();
+  const grupos = agruparPorVendedor(list);
   return `
   ${header(nombreCiudad(STATE.ciudad),"Clientes · "+STATE.userName,false)}
   <main>
     <button class="btn btn-primary" data-nav="nuevoCliente" style="margin-bottom:14px;">+ Nuevo cliente</button>
     <h2 class="section-title">Clientes${STATE.ciudad!==NACIONAL?" en "+STATE.ciudad:""} (${list.length})</h2>
     ${list.length===0 ? `<div class="empty"><div class="big">🗂️</div>Todavía no hay clientes cargados.</div>` :
-      list.map(c=>{
-        const est = clienteEstadoGeneral(c);
-        const [label,cls] = badgeFor(est);
-        return `<div class="list-item" data-cliente="${c.id}">
-          <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${c.vendedor||"sin vendedor"} · ${(c.almacenes||[]).length} almacén(es)</div></div>
-          <span class="badge ${cls}">${label}</span>
-        </div>`;
-      }).join("")}
+      grupos.map(g=>`
+        <div class="vendor-group">
+          <div class="vendor-heading"><span>${g.vendedor}</span>${g.telefono?`<span class="vendor-phone">📞 ${g.telefono}</span>`:""}</div>
+          ${g.clientes.map(c=>{
+            const est = clienteEstadoGeneral(c);
+            const [label,cls] = badgeFor(est);
+            return `<div class="list-item" data-cliente="${c.id}">
+              <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${(c.almacenes||[]).length} almacén(es)</div></div>
+              <span class="badge ${cls}">${label}</span>
+            </div>`;
+          }).join("")}
+        </div>`).join("")}
   </main>
   ${tabbar('clientes')}`;
 }
@@ -404,11 +487,12 @@ function screenNuevoCliente(){
     <div class="card">
       ${STATE.ciudad===NACIONAL ? `
       <div class="field"><label>Ciudad</label>
-        <select id="cCiudad">${CIUDADES.map(c=>`<option value="${c}">${c}</option>`).join("")}</select>
+        <select id="cCiudad">${CIUDADES.map(c=>`<option value="${c}">${NOMBRES_CIUDAD[c]||c}</option>`).join("")}</select>
       </div>` : ``}
       <div class="field"><label>Nombre del cliente</label><input type="text" id="cNombre" placeholder="Ej. Distribuidora Maguá"></div>
       <div class="field"><label>Código (opcional)</label><input type="text" id="cCodigo" placeholder="Ej. 106757"></div>
       <div class="field"><label>Vendedor asignado</label><input type="text" id="cVendedor" placeholder="Ej. Jose Siles"></div>
+      <div class="field"><label>WhatsApp del vendedor (opcional)</label><input type="text" id="cVendedorTelefono" inputmode="tel" placeholder="Ej. 77483827"></div>
       <button class="btn btn-primary" id="guardarCliente">Guardar cliente</button>
     </div>
   </main>`;
@@ -418,20 +502,53 @@ function almacenListoParaConteo(rel){
   return !!(rel && rel.gps && rel.fotos && rel.fotos.filter(Boolean).length===4);
 }
 
+/* Una vez enviado a aprobación (o ya aprobado/rechazado), el relevador ya no puede
+   tocar esos datos. Solo el Administrador puede seguir editando. */
+function almacenBloqueado(rel){
+  return !!(rel && rel.estadoVendedor && rel.estadoVendedor!=="borrador");
+}
+function clienteBloqueado(cliente){
+  return (cliente.almacenes||[]).some(a=>almacenBloqueado(STATE.relevamientos[a.id]));
+}
+function esAdministrador(){ return STATE.role==="administrador"; }
+
 function abrirAlmacen(almacenId){
   STATE.almacenId = almacenId;
   const rel = getRelevamiento(almacenId);
+  if(almacenBloqueado(rel) && !esAdministrador()){
+    STATE.screen = "almacenBloqueado"; render(); return;
+  }
   STATE.screen = almacenListoParaConteo(rel) ? "conteo" : "ubicacionFotos";
   render();
+}
+
+function screenAlmacenBloqueado(){
+  const a = getAlmacen();
+  const rel = getRelevamiento(STATE.almacenId);
+  const [label,cls] = badgeFor(rel.estadoVendedor==="pendiente"?"pendiente":rel.estadoVendedor==="aprobado"?"aprobado":rel.estadoVendedor==="rechazado"?"rechazado":"en_progreso");
+  return `
+  ${header("Almacén enviado",a?a.nombre:"",true,"almacenes")}
+  <main>
+    <div class="card" style="text-align:center;">
+      <div style="font-size:34px;margin-bottom:8px;">🔒</div>
+      <div style="font-weight:700;margin-bottom:6px;">Este almacén ya fue relevado y enviado</div>
+      <span class="badge ${cls}" style="margin-bottom:10px;display:inline-block;">${label}</span>
+      <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
+      <div class="hint">Relevado por: ${rel.relevadorNombre||"—"}${rel.fechaConteo?" · "+new Date(rel.fechaConteo).toLocaleDateString():""}</div>
+      <div class="hint" style="margin-top:10px;">Los datos ya no se pueden modificar. Si hace falta corregir algo, pedile a un Administrador que entre con su usuario.</div>
+    </div>
+  </main>`;
 }
 
 function screenAlmacenes(){
   const c = getCliente(STATE.clienteId);
   if(!c){ STATE.screen="clientes"; return screenClientes(); }
   const almacenes = c.almacenes||[];
+  const bloqueado = clienteBloqueado(c) && !esAdministrador();
   return `
   ${header(c.nombre,nombreCiudad(STATE.ciudad)+" · "+(c.vendedor||"sin vendedor"),true,"clientes")}
   <main>
+    ${bloqueado ? `<div class="mini-note">🔒 Este cliente ya fue relevado y enviado a aprobación. Los datos no se pueden modificar. Si hace falta corregir algo, pedile a un Administrador que entre con su usuario.</div>` : `
     <div class="field" style="margin-bottom:16px;">
       <label>Agregar almacén</label>
       <div style="display:flex;gap:8px;">
@@ -439,21 +556,22 @@ function screenAlmacenes(){
         <button class="btn btn-primary" id="addAlmacen" style="width:auto;padding:10px 16px;">+</button>
       </div>
       <div class="hint">Un mismo cliente puede tener varios almacenes: cada uno se releva por separado y se suman automáticamente al total del cliente. En cada almacén primero se registra la ubicación y las fotos, y recién después se habilita el conteo.</div>
-    </div>
+    </div>`}
     <h2 class="section-title">Almacenes (${almacenes.length})</h2>
     ${almacenes.length===0 ? `<div class="empty"><div class="big">🏬</div>Agregá el primer almacén de este cliente.</div>` :
       almacenes.map(a=>{
         const rel = STATE.relevamientos[a.id];
         const done = rel && Object.keys(rel.conteos||{}).length>0;
         const listo = almacenListoParaConteo(rel);
+        const bloq = almacenBloqueado(rel);
         const gps = rel && rel.gps;
         const fotos = rel ? rel.fotos.filter(Boolean).length : 0;
         return `<div class="list-item" data-almacen="${a.id}">
-          <div><b>${a.nombre}</b><div class="meta">${!listo? "⚠️ Falta ubicación/fotos para habilitar el conteo":(done? "Conteo cargado":"Listo para contar")} · ${gps?"📍 ubicado":"📍 sin ubicar"} · 📷 ${fotos}/4${rel&&rel.fotosEliminadas?" (fotos vencidas)":""}</div></div>
+          <div><b>${a.nombre}</b><div class="meta">${bloq? "🔒 enviado, no editable":(!listo? "⚠️ Falta ubicación/fotos para habilitar el conteo":(done? "Conteo cargado":"Listo para contar"))} · ${gps?"📍 ubicado":"📍 sin ubicar"} · 📷 ${fotos}/4${rel&&rel.fotosEliminadas?" (fotos vencidas)":""}</div></div>
           <span class="chev">›</span>
         </div>`;
       }).join("")}
-    ${almacenes.length>0?`<button class="btn btn-amber" data-nav="resumenCliente" style="margin-top:18px;">Ver resumen y pasar a firma del cliente →</button>`:""}
+    ${almacenes.length>0 && !bloqueado ?`<button class="btn btn-amber" data-nav="resumenCliente" style="margin-top:18px;">Ver resumen y pasar a firma del cliente →</button>`:""}
   </main>`;
 }
 
@@ -573,27 +691,57 @@ function screenFirma(){
           <input type="text" id="firmaNombreInput" placeholder="Ej. María Pérez" value="${(STATE.firmaNombreTexto||'').replace(/"/g,'&quot;')}">
         </div>
       `}
-      <div class="hint" style="margin-top:14px;">Al tocar "Confirmar y enviar" se va a abrir la cámara frontal automáticamente para tomar una foto de quien confirma, y se envía todo junto.</div>
       <button class="btn btn-primary" id="enviarVendedor" style="margin-top:14px;">Confirmar y enviar a aprobación</button>
-      <input type="file" accept="image/*" capture="user" id="firmaFotoInput" style="display:none;">
     ` : ``}
+  </main>`;
+}
+
+function linkWhatsApp(telefono, mensaje){
+  const limpio = String(telefono||"").replace(/\D/g,"");
+  const numero = limpio.length===8 ? "591"+limpio : limpio; // celulares bolivianos: 8 dígitos + código de país 591
+  return "https://wa.me/"+numero+"?text="+encodeURIComponent(mensaje);
+}
+
+function screenEnvioExitoso(){
+  const e = STATE.ultimoEnvio || {};
+  const mensaje = `Hola ${e.vendedor||""}, el trade stock de tu cliente ${e.clienteNombre||""} ya se finalizó, favor dar tu ok en la APP.`;
+  return `
+  ${header("Enviado ✔",e.clienteNombre||"",false)}
+  <main>
+    <div class="card" style="text-align:center;padding:28px 16px;">
+      <div style="font-size:40px;margin-bottom:8px;">✅</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Relevamiento enviado</div>
+      <div class="hint">Queda pendiente de aprobación de ${e.vendedor||"el vendedor"}.</div>
+    </div>
+    ${e.vendedorTelefono ? `
+      <a class="btn btn-primary" style="background:#25D366;text-decoration:none;" href="${linkWhatsApp(e.vendedorTelefono, mensaje)}" target="_blank" rel="noopener">📲 Avisar a ${e.vendedor} por WhatsApp</a>
+      <div class="hint" style="text-align:center;margin-top:8px;">Se abre WhatsApp con el mensaje ya escrito — solo falta tocar enviar.</div>
+    ` : `
+      <div class="mini-note">Este vendedor todavía no tiene un WhatsApp cargado, así que no se puede armar el aviso automático. Podés agregarlo la próxima vez que crees o edites este cliente.</div>
+    `}
+    <button class="btn btn-outline" style="margin-top:14px;" data-nav="clientes">Volver a clientes</button>
   </main>`;
 }
 
 function screenVendedorLista(){
   const todos = clientesDeMiCiudad();
+  const grupos = agruparPorVendedor(todos);
   return `
-  ${header("Aprobaciones",nombreCiudad(STATE.ciudad)+" · "+STATE.userName,false)}
+  ${header(esAdministrador()?"Panel de administrador":"Aprobaciones",nombreCiudad(STATE.ciudad)+" · "+STATE.userName,false)}
   <main>
     ${todos.length===0?`<div class="empty"><div class="big">📭</div>Todavía no hay clientes.</div>`:
-    todos.map(c=>{
-      const est = clienteEstadoGeneral(c);
-      const [label,cls] = badgeFor(est);
-      return `<div class="list-item" data-vcliente="${c.id}">
-        <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${c.vendedor||"sin vendedor"} · ${(c.almacenes||[]).length} almacén(es)</div></div>
-        <span class="badge ${cls}">${label}</span>
-      </div>`;
-    }).join("")}
+    grupos.map(g=>`
+      <div class="vendor-group">
+        <div class="vendor-heading"><span>${g.vendedor}</span>${g.telefono?`<span class="vendor-phone">📞 ${g.telefono}</span>`:""}</div>
+        ${g.clientes.map(c=>{
+          const est = clienteEstadoGeneral(c);
+          const [label,cls] = badgeFor(est);
+          return `<div class="list-item" data-vcliente="${c.id}">
+            <div><b>${c.nombre}</b><div class="meta">${STATE.ciudad===NACIONAL?c.ciudad+" · ":""}${(c.almacenes||[]).length} almacén(es)</div></div>
+            <span class="badge ${cls}">${label}</span>
+          </div>`;
+        }).join("")}
+      </div>`).join("")}
   </main>
   ${tabbar('vendedorLista')}`;
 }
@@ -609,22 +757,26 @@ function screenVendedorDetalle(){
       const rel = STATE.relevamientos[a.id] || emptyRelevamiento(a.id);
       const estKey = rel.estadoVendedor==="pendiente"?"pendiente":rel.estadoVendedor==="aprobado"?"aprobado":rel.estadoVendedor==="rechazado"?"rechazado":"en_progreso";
       const [label,cls] = badgeFor(estKey);
+      const finalizado = rel.estadoVendedor && rel.estadoVendedor!=="borrador";
       return `<div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
           <b>${a.nombre}</b><span class="badge ${cls}">${label}</span>
         </div>
+        <div class="hint">Relevado por: <b>${rel.relevadorNombre||"—"}</b>${rel.fechaConteo?" · "+new Date(rel.fechaConteo).toLocaleString():""}</div>
+        <div class="hint">Finalizado: ${finalizado?"Sí ✔":"No, todavía en curso"}</div>
         <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
         <div class="hint">Ubicación: ${rel.gps?`lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)}`:"no capturada"}</div>
         <div class="hint">Fotos del almacén: ${rel.fotos.filter(Boolean).length}/4${rel.fotosEliminadas?" (vencidas y eliminadas)":""}</div>
         <div class="hint">Conformidad del cliente: ${rel.clienteAcuerdo===true?"Sí, firmó":rel.clienteAcuerdo===false?"No conforme":"pendiente"}${rel.firmaTipo?" · "+(rel.firmaTipo==="nombre"?"nombre escrito":"firma en pantalla"):""}</div>
-        ${rel.firmaImg?`<div class="hint">Firma registrada ✔ · Foto de firmante ${rel.firmaFotoImg?"✔":"vencida/no disponible"}</div>`:""}
+        ${rel.firmaImg?`<div class="hint">Firma registrada ✔</div>`:""}
         ${rel.fotos.some(Boolean) ? `<div class="photo-grid" style="margin-top:10px;">${rel.fotos.map(f=>f?`<div class="photo-slot filled"><img src="${f}"></div>`:'').join("")}</div>`:""}
         ${rel.firmaImg?`<div class="photo-slot filled" style="aspect-ratio:16/8;margin-top:10px;"><img src="${rel.firmaImg}"></div>`:""}
-        ${rel.estadoVendedor==="pendiente"?`
-          <div class="foot-actions">
+        <div class="foot-actions">
+          ${rel.estadoVendedor==="pendiente"?`
             <button class="btn btn-primary" data-aprobar="${a.id}">Aprobar</button>
-            <button class="btn btn-danger" data-rechazar="${a.id}">Rechazar</button>
-          </div>`:""}
+            <button class="btn btn-danger" data-rechazar="${a.id}">Rechazar</button>`:""}
+          ${esAdministrador()?`<button class="btn btn-ghost" data-editar-almacen="${a.id}">✏️ Editar datos</button>`:""}
+        </div>
       </div>`;
     }).join("")}
   </main>
@@ -651,6 +803,7 @@ function screenDashboard(){
   const porCiudad = {};
   const riesgos = []; // {cliente, sku, dias}
   const clientesCobertura = []; // {cliente, dias}
+  const stockPorCliente = []; // {nombre, ciudad, stock}
   let pendientesAprobacion = 0;
   let relevadosEsteMes = 0;
   const hoy = Date.now();
@@ -673,6 +826,7 @@ function screenDashboard(){
       }
       if(venta) ventaMensualCliente += Number(venta);
     });
+    if(stockCliente>0) stockPorCliente.push({ nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente });
     if(diasClienteAcc.length>0){
       const prom = diasClienteAcc.reduce((a,b)=>a+b,0)/diasClienteAcc.length;
       clientesCobertura.push({cliente:c.nombre+(STATE.ciudad===NACIONAL?" ("+c.ciudad+")":""), dias:Math.round(prom*10)/10});
@@ -687,6 +841,7 @@ function screenDashboard(){
 
   riesgos.sort((a,b)=>a.dias-b.dias);
   clientesCobertura.sort((a,b)=>a.dias-b.dias);
+  stockPorCliente.sort((a,b)=>b.stock-a.stock);
   const coberturaPromedio = countDias>0 ? Math.round((sumaDias/countDias)*10)/10 : null;
   const maxCat = Math.max(1,...Object.values(porCategoria));
   const maxCiudad = Math.max(1,...Object.values(porCiudad));
@@ -700,6 +855,24 @@ function screenDashboard(){
       <div class="metric"><span class="lbl">Almacenes relevados en los últimos 30 días</span><span class="val">${relevadosEsteMes}</span></div>
       <div class="metric"><span class="lbl">Pendientes de aprobación</span><span class="val">${pendientesAprobacion}</span></div>
     </div>
+
+    ${(()=>{
+      const hist = historicoParaCiudad(STATE.ciudad);
+      if(!hist) return "";
+      const max = Math.max(...hist,1);
+      const esCombinado = ["ORURO","POTOSI","SUCRE","TARIJA"].includes(STATE.ciudad);
+      return `
+    <h2 class="section-title">Evolución del stock (mayo–agosto, planilla Trade Stock)</h2>
+    <div class="card">
+      ${esCombinado?`<div class="hint" style="margin-bottom:8px;">Dato histórico combinado de Oruro + Potosí + Sucre + Tarija: la planilla original no separaba estas 4 ciudades mes a mes.</div>`:""}
+      ${HISTORICO_MENSUAL.meses.map((m,i)=>`
+        <div class="bar-row">
+          <div class="top"><span>${m}${i===HISTORICO_MENSUAL.meses.length-1?" (agosto)":""}</span><span>${hist[i]} u.</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(hist[i]/max*100).toFixed(0)}%"></div></div>
+        </div>`).join("")}
+      <div class="hint" style="margin-top:6px;">Estos totales vienen de la planilla Trade Stock de referencia. El "Total unidades en stock" de arriba es el dato en vivo cargado en la app.</div>
+    </div>`;
+    })()}
 
     ${STATE.ciudad===NACIONAL ? `
     <h2 class="section-title">Stock por ciudad</h2>
@@ -720,6 +893,19 @@ function screenDashboard(){
           <div class="top"><span>${cat}</span><span>${qty} u.</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:${(qty/maxCat*100).toFixed(0)}%"></div></div>
         </div>`).join("")}
+    </div>
+
+    <h2 class="section-title">Clientes con más stock ${STATE.ciudad===NACIONAL?"(participación sobre su propia ciudad)":"(participación sobre "+STATE.ciudad+")"}</h2>
+    <div class="card">
+      ${stockPorCliente.length===0?`<div class="hint">Todavía no hay conteos cargados.</div>`:
+      stockPorCliente.slice(0,8).map((r,i)=>{
+        const base = STATE.ciudad===NACIONAL ? (porCiudad[r.ciudad]||1) : totalStockCiudad;
+        const pct = base>0 ? Math.round((r.stock/base)*1000)/10 : 0;
+        return `<div class="risk-item">
+          <div><div class="name">${i+1}. ${r.nombre}${STATE.ciudad===NACIONAL?` <span class="sub">(${r.ciudad})</span>`:""}</div><div class="sub">${r.stock} unidades</div></div>
+          <span class="badge badge-approved">${pct}%</span>
+        </div>`;
+      }).join("")}
     </div>
 
     <h2 class="section-title">Clientes con menor cobertura (riesgo de quiebre)</h2>
@@ -776,7 +962,7 @@ function bindEvents(){
   $app.querySelectorAll("[data-role]").forEach(el=>{
     el.addEventListener("click", async ()=>{
       const name = document.getElementById("userName").value.trim();
-      const ciudad = STATE.loginCiudadElegida;
+      const ciudad = el.dataset.role==="administrador" ? NACIONAL : STATE.loginCiudadElegida;
       if(!name){ showToast("Escribí tu nombre para continuar"); return; }
       STATE.userName = name;
       STATE.ciudad = ciudad;
@@ -809,10 +995,11 @@ function bindEvents(){
       const nombre = document.getElementById("cNombre").value.trim();
       const codigo = document.getElementById("cCodigo").value.trim();
       const vendedor = document.getElementById("cVendedor").value.trim();
+      const vendedorTelefono = document.getElementById("cVendedorTelefono").value.replace(/\D/g,"");
       const cCiudadEl = document.getElementById("cCiudad");
       const ciudadNuevo = cCiudadEl ? cCiudadEl.value : STATE.ciudad;
       if(!nombre){ showToast("Ingresá el nombre del cliente"); return; }
-      const nuevo = { id: uid("cli"), ciudad: ciudadNuevo, nombre, codigo, vendedor, almacenes: [], ventasProm:{} };
+      const nuevo = { id: uid("cli"), ciudad: ciudadNuevo, nombre, codigo, vendedor, vendedorTelefono, almacenes: [], ventasProm:{} };
       STATE.clientes.push(nuevo);
       await saveClientes();
       STATE.clienteId = nuevo.id;
@@ -934,21 +1121,18 @@ function bindEvents(){
   const limpiarFirma = document.getElementById("limpiarFirma");
   if(limpiarFirma){ limpiarFirma.addEventListener("click",()=>{ clearSignature(); }); }
 
-  async function finalizarEnvioFirma(fotoDataUrl){
+  async function finalizarEnvioFirma(){
     showToast("Enviando…");
     const c = getCliente(STATE.clienteId);
     const almacenes = c.almacenes||[];
     const primero = almacenes[0];
     const firmaImgLocal = STATE.firmaMetodo==="dibujo" ? getSignatureDataUrl() : generarImagenNombre(STATE.firmaNombreTexto);
     const resFirma = await DB.uploadPhoto(primero.id, c.id, "firma", firmaImgLocal);
-    const resFoto = await DB.uploadPhoto(primero.id, c.id, "firmaFoto", fotoDataUrl);
     const firmaImgUrl = (resFirma && resFirma.url) || firmaImgLocal;
-    const firmaFotoUrl = (resFoto && resFoto.url) || fotoDataUrl;
     for(const a of almacenes){
       const rel = getRelevamiento(a.id);
       rel.clienteAcuerdo = true;
       rel.firmaImg = firmaImgUrl;
-      rel.firmaFotoImg = firmaFotoUrl;
       rel.firmaTipo = STATE.firmaMetodo;
       rel.firmaNombreTexto = STATE.firmaMetodo==="nombre" ? STATE.firmaNombreTexto : "";
       rel.fotosEliminadas = false;
@@ -957,17 +1141,8 @@ function bindEvents(){
       await saveRelevamientoActual(a.id);
     }
     STATE.firmaAcuerdo=false; STATE.firmaMetodo="dibujo"; STATE.firmaNombreTexto="";
-    showToast("Enviado al vendedor "+(c.vendedor||"")+" para su aprobación");
-    STATE.screen="clientes"; render();
-  }
-
-  const firmaFotoInput = document.getElementById("firmaFotoInput");
-  if(firmaFotoInput){
-    firmaFotoInput.addEventListener("change",(e)=>{
-      const file = e.target.files[0];
-      if(!file) return; // el cliente canceló la cámara: no se envía nada todavía
-      handleFile(file, (dataUrl)=>{ finalizarEnvioFirma(dataUrl); });
-    });
+    STATE.ultimoEnvio = { clienteNombre: c.nombre, vendedor: c.vendedor||"", vendedorTelefono: c.vendedorTelefono||"" };
+    STATE.screen="envioExitoso"; render();
   }
 
   const enviarVendedorBtn = document.getElementById("enviarVendedor");
@@ -975,8 +1150,7 @@ function bindEvents(){
     enviarVendedorBtn.addEventListener("click", ()=>{
       if(STATE.firmaMetodo==="dibujo" && !hasSignature()){ showToast("Falta firmar en la pantalla"); return; }
       if(STATE.firmaMetodo==="nombre" && !(STATE.firmaNombreTexto||"").trim()){ showToast("Escribí el nombre de quien confirma"); return; }
-      // dispara la cámara frontal automáticamente; al tomar la foto se completa el envío
-      document.getElementById("firmaFotoInput").click();
+      finalizarEnvioFirma();
     });
   }
 
@@ -986,6 +1160,9 @@ function bindEvents(){
       await saveRelevamientoActual(el.dataset.aprobar);
       render();
     });
+  });
+  $app.querySelectorAll("[data-editar-almacen]").forEach(el=>{
+    el.addEventListener("click", ()=>{ abrirAlmacen(el.dataset.editarAlmacen); });
   });
   $app.querySelectorAll("[data-rechazar]").forEach(el=>{
     el.addEventListener("click", async ()=>{
