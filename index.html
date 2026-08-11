@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -235,19 +235,33 @@ const DB_LOCAL = {
 
 const DB_REMOTE = {
   async getAll(){
-    const res = await fetch(API_URL + "?action=getAll");
-    if(!res.ok) throw new Error("No se pudo conectar al backend");
-    return await res.json();
+    let res;
+    try{ res = await fetch(API_URL + "?action=getAll"); }
+    catch(e){ throw new Error("No se pudo conectar al backend (red/CORS): "+e.message); }
+    if(!res.ok) throw new Error("El backend respondió con error HTTP "+res.status);
+    let data;
+    try{ data = await res.json(); }
+    catch(e){ throw new Error("La respuesta del backend no es JSON válido (revisá la URL de API_URL)"); }
+    if(data && data.error) throw new Error("El backend devolvió un error: "+data.error);
+    return data;
   },
   async _post(payload){
     // Content-Type text/plain evita que el navegador dispare un preflight CORS
     // que Apps Script no sabe responder.
-    const res = await fetch(API_URL, {
-      method:"POST",
-      headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify(payload)
-    });
-    return await res.json();
+    let res;
+    try{
+      res = await fetch(API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify(payload)
+      });
+    }catch(e){ throw new Error("No se pudo conectar al backend (red/CORS) al guardar: "+e.message); }
+    if(!res.ok) throw new Error("El backend respondió con error HTTP "+res.status+" al guardar");
+    let data;
+    try{ data = await res.json(); }
+    catch(e){ throw new Error("La respuesta del backend no es JSON válido al guardar"); }
+    if(data && data.error) throw new Error("El backend devolvió un error al guardar: "+data.error);
+    return data;
   },
   async saveClientes(clientes){ return this._post({ action:"saveClientes", clientes }); },
   async saveRelevamiento(almacenId, clienteId, data){ return this._post({ action:"saveRelevamiento", almacenId, clienteId, data }); },
@@ -1227,8 +1241,14 @@ function bindEvents(){
       if(!ok) return;
       importarAgostoBtn.disabled = true;
       showToast("Importando… esto puede tardar un momento");
-      const hechos = await importarAgosto((h,t,nombre)=>{ if(h % 5 === 0 || h===t) showToast(`Importando ${h}/${t}… (${nombre})`); });
-      showToast(`Listo: se importaron ${hechos} clientes`);
+      try{
+        const hechos = await importarAgosto((h,t,nombre)=>{ if(h % 5 === 0 || h===t) showToast(`Importando ${h}/${t}… (${nombre})`); });
+        showToast(`Listo: se importaron ${hechos} clientes`);
+      }catch(err){
+        console.error("Error al importar agosto:", err);
+        showToast("❌ Error al importar: "+(err&&err.message?err.message:String(err)));
+        alert("Falló la importación.\n\nDetalle técnico:\n"+(err&&err.message?err.message:String(err))+"\n\nMandale esta captura a soporte.");
+      }
       importarAgostoBtn.disabled = false;
       render();
     });
@@ -1416,8 +1436,19 @@ function exportarExcel(){
    INIT
 --------------------------------------------------------------- */
 (async function init(){
-  await loadAll();
-  render();
+  try{
+    await loadAll();
+    render();
+  }catch(err){
+    console.error("Error al iniciar la app:", err);
+    document.getElementById("app").innerHTML = `
+      <div style="padding:24px;font-family:sans-serif;">
+        <h2 style="color:#a63a3a;">No se pudo conectar con el backend</h2>
+        <p>${(err&&err.message)?err.message:String(err)}</p>
+        <p style="color:#6b756f;font-size:13px;">Revisá que la URL en <code>API_URL</code> sea correcta y que la implementación de Apps Script tenga acceso "Cualquier usuario". Sacale una captura a esta pantalla y mandásela a soporte.</p>
+        <button onclick="location.reload()" style="margin-top:10px;padding:10px 16px;border:none;border-radius:8px;background:#2f5d4f;color:#fff;font-weight:700;">Reintentar</button>
+      </div>`;
+  }
 })();
 </script>
 </body>
