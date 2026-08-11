@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -306,10 +306,26 @@ async function saveRelevamientoActual(almacenId){
 /* Carga el stock de agosto (IMPORT_AGOSTO) como si ya hubiera sido relevado con la
    app: crea un almacén "Depósito Principal" por cliente (si no existe) y guarda el
    conteo ya aprobado. Es seguro volver a ejecutarlo: reemplaza el mismo almacén. */
+function esperar(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function guardarConReintentos(fn, intentos){
+  intentos = intentos || 4;
+  let ultimoError;
+  for(let i=0;i<intentos;i++){
+    try{ return await fn(); }
+    catch(e){
+      ultimoError = e;
+      await esperar(600 * (i+1)); // espera un poco más en cada reintento
+    }
+  }
+  throw ultimoError;
+}
+
 async function importarAgosto(onProgreso){
   const FECHA_IMPORT = "2026-08-01T12:00:00.000Z";
   let huboClientesNuevos = false;
   let hechos = 0, total = 0;
+  const fallidos = [];
   Object.values(IMPORT_AGOSTO).forEach(cs=>{ total += Object.keys(cs).length; });
 
   for(const ciudad of Object.keys(IMPORT_AGOSTO)){
@@ -339,13 +355,19 @@ async function importarAgosto(onProgreso){
       rel.firmaNombreTexto = "Importación inicial";
       rel.fechaFirma = FECHA_IMPORT;
       rel.estadoVendedor = "aprobado";
-      await DB.saveRelevamiento(almacen.id, cliente.id, rel);
+      try{
+        await guardarConReintentos(()=>DB.saveRelevamiento(almacen.id, cliente.id, rel));
+      }catch(e){
+        console.error("Falló definitivamente:", nombreCliente, e);
+        fallidos.push(nombreCliente);
+      }
       hechos++;
-      if(onProgreso) onProgreso(hechos, total, nombreCliente);
+      if(onProgreso) onProgreso(hechos, total, nombreCliente, fallidos.length);
+      await esperar(250); // pequeña pausa entre pedidos para no saturar el backend
     }
   }
-  if(huboClientesNuevos) await DB.saveClientes(STATE.clientes);
-  return hechos;
+  if(huboClientesNuevos) await guardarConReintentos(()=>DB.saveClientes(STATE.clientes));
+  return { hechos, total, fallidos };
 }
 
 function seedClientesFaltantes(){
@@ -1237,13 +1259,20 @@ function bindEvents(){
   const importarAgostoBtn = document.getElementById("importarAgostoBtn");
   if(importarAgostoBtn){
     importarAgostoBtn.addEventListener("click", async ()=>{
-      const ok = confirm('Esto va a cargar el stock de agosto (del Excel) en el almacén "Depósito Principal" de cada cliente, como si ya se hubiera relevado con la app y quedará aprobado. Si ese almacén ya tenía datos cargados, se van a reemplazar. ¿Continuar?');
+      const ok = confirm('Esto va a cargar el stock de agosto (del Excel) en el almacén "Depósito Principal" de cada cliente, como si ya se hubiera relevado con la app y quedará aprobado. Si ese almacén ya tenía datos cargados, se van a reemplazar.\n\nDejá la pantalla del celular encendida y esta pestaña abierta hasta que termine (puede tardar 1-2 minutos). ¿Continuar?');
       if(!ok) return;
       importarAgostoBtn.disabled = true;
-      showToast("Importando… esto puede tardar un momento");
+      showToast("Importando… no bloquees el celular hasta que termine");
       try{
-        const hechos = await importarAgosto((h,t,nombre)=>{ if(h % 5 === 0 || h===t) showToast(`Importando ${h}/${t}… (${nombre})`); });
-        showToast(`Listo: se importaron ${hechos} clientes`);
+        const { hechos, total, fallidos } = await importarAgosto((h,t,nombre,nFallidos)=>{
+          showToast(`Importando ${h}/${t}… (${nombre})${nFallidos?` · ${nFallidos} con error`:""}`);
+        });
+        if(fallidos.length===0){
+          showToast(`✅ Listo: se importaron los ${hechos} clientes correctamente`);
+        }else{
+          showToast(`⚠️ Se importaron ${hechos-fallidos.length}/${total}. Fallaron: ${fallidos.join(", ")}`);
+          alert("Importación terminada con algunos errores.\n\nEstos clientes NO se pudieron guardar (podés volver a tocar el botón para reintentar solo con ellos, es seguro repetirlo):\n\n"+fallidos.join("\n"));
+        }
       }catch(err){
         console.error("Error al importar agosto:", err);
         showToast("❌ Error al importar: "+(err&&err.message?err.message:String(err)));
