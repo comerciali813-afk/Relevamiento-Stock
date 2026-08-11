@@ -160,6 +160,11 @@ function historicoParaCiudad(ciudad){
   return HISTORICO_MENSUAL[ciudad] || null;
 }
 
+/* Stock relevado en agosto (Trade_Stock_2026_AGOSTO.xlsx), por cliente y SKU.
+   Se usa para el botón de Administrador "Importar relevamiento de agosto", que carga
+   estos datos como si ya se hubieran relevado con la app este mes. */
+const IMPORT_AGOSTO = {"CBBA": {"MAGUA": {"sku_1": 9, "sku_3": 21, "sku_5": 31, "sku_6": 1, "sku_7": 5, "sku_13": 2, "sku_14": 6, "sku_15": 1, "sku_16": 3, "sku_23": 7, "sku_26": 2, "sku_29": 2, "sku_31": 2, "sku_33": 1, "sku_34": 1, "sku_36": 1, "sku_37": 1, "sku_38": 3, "sku_39": 4, "sku_40": 19, "sku_42": 3, "sku_43": 3, "sku_44": 7, "sku_45": 4, "sku_48": 5, "sku_49": 1, "sku_50": 6, "sku_51": 9, "sku_54": 1, "sku_58": 4, "sku_59": 21, "sku_60": 7, "sku_61": 1, "sku_62": 3, "sku_63": 2, "sku_65": 10, "sku_66": 11}, "IS LOGISTIC": {"sku_1": 20, "sku_2": 4, "sku_3": 78, "sku_4": 6, "sku_5": 10, "sku_7": 17, "sku_8": 6, "sku_9": 4, "sku_11": 4, "sku_14": 12, "sku_17": 4, "sku_18": 1, "sku_20": 1, "sku_23": 3, "sku_24": 5, "sku_25": 8, "sku_26": 6, "sku_29": 3, "sku_30": 8, "sku_31": 1, "sku_32": 2, "sku_34": 3, "sku_36": 3, "sku_38": 3, "sku_39": 21, "sku_40": 20, "sku_41": 7, "sku_42": 12, "sku_43": 8, "sku_44": 11, "sku_45": 4, "sku_47": 12, "sku_48": 19, "sku_49": 1, "sku_50": 4, "sku_51": 3, "sku_54": 8, "sku_55": 6, "sku_57": 14, "sku_59": 51, "sku_60": 30, "sku_61": 1, "sku_63": 5, "sku_64": 2, "sku_65": 10, "sku_66": 10}, "BJ": {"sku_1": 28, "sku_2": 50, "sku_3": 194, "sku_4": 13, "sku_5": 283, "sku_6": 62, "sku_8": 3, "sku_9": 5, "sku_10": 6, "sku_11": 9, "sku_13": 1, "sku_14": 26, "sku_16": 24, "sku_17": 1, "sku_18": 3, "sku_20": 16, "sku_22": 1, "sku_23": 5, "sku_24": 6, "sku_25": 25, "sku_26": 2, "sku_29": 2, "sku_30": 2, "sku_31": 3, "sku_33": 1, "sku_37": 4, "sku_40": 15, "sku_42": 8, "sku_43": 1, "sku_44": 5, "sku_45": 38, "sku_46": 2, "sku_47": 1, "sku_48": 21, "sku_50": 21, "sku_51": 17, "sku_52": 1, "sku_54": 1, "sku_55": 12, "sku_56": 1, "sku_57": 4, "sku_58": 8, "sku_59": 74, "sku_60": 27, "sku_63": 32, "sku_64": 5, "sku_65": 35, "sku_66": 25}, "TSC": {"sku_1": 317, "sku_2": 9, "sku_3": 760, "sku_4": 105, "sku_5": 197, "sku_6": 157, "sku_7": 61, "sku_8": 21, "sku_9": 34, "sku_11": 13, "sku_12": 7, "sku_13": 3, "sku_14": 44, "sku_16": 19, "sku_18": 19, "sku_19": 18, "sku_20": 38, "sku_21": 22, "sku_22": 18, "sku_23": 36, "sku_24": 11, "sku_25": 6, "sku_26": 13, "sku_27": 12, "sku_30": 12, "sku_31": 10, "sku_32": 4, "sku_33": 7, "sku_34": 8, "sku_35": 4, "sku_36": 16, "sku_37": 19, "sku_38": 78, "sku_39": 171, "sku_40": 310, "sku_41": 30, "sku_42": 23, "sku_43": 20, "sku_44": 103, "sku_45": 91, "sku_47": 44, "sku_48": 71, "sku_49": 10, "sku_50": 23, "sku_51": 37, "sku_54": 13, "sku_55": 40, "sku_56": 16, "sku_57": 157, "sku_58": 6, "sku_59": 242, "sku_60": 48, "sku_61": 31, "sku_62": 19, "sku_63": 15, "sku_65": 50, "sku_66": 35}, "PATRICIA SAINZ": {"sku_1": 429, "sku_2": 262, "sku_3": 982, "sku_4": 184, "sku_5": 593, "sku_6": 356, "sku_7": 62, "sku_8": 50, "sku_9": 30, "sku_10": 18, "sku_13": 21, "sku_14": 34, "sku_15": 10, "sku_16": 102, "sku_18": 12, "sku_19": 7, "sku_20": 46, "sku_21": 5, "sku_23": 49, "sku_24": 2, "sku_25": 19, "sku_26": 10, "sku_29": 3, "sku_30": 7, "sku_31": 7, "sku_32": 2, "sku_34": 5, "sku_35": 1, "sku_36": 3, "sku_37": 13, "sku_38": 76, "sku_39": 168, "sku_40": 143, "sku_41": 9, "sku_42": 13, "sku_43": 39, "sku_44": 88, "sku_45": 15, "sku_47": 8, "sku_48": 128, "sku_49": 45, "sku_50": 81, "sku_51": 59, "sku_54": 6, "sku_55": 61, "sku_57": 81, "sku_58": 20, "sku_59": 254, "sku_60": 107, "sku_61": 32, "sku_62": 24, "sku_63": 48, "sku_64": 2, "sku_65": 134, "sku_66": 87}, "CIDAR FLORES": {"sku_3": 10, "sku_4": 8, "sku_5": 8, "sku_6": 15, "sku_9": 3, "sku_12": 1, "sku_14": 2, "sku_17": 1, "sku_24": 1, "sku_26": 1, "sku_27": 1, "sku_29": 2, "sku_30": 2, "sku_31": 1, "sku_37": 2, "sku_38": 6, "sku_39": 10, "sku_43": 2, "sku_44": 2, "sku_45": 2, "sku_48": 3, "sku_49": 5, "sku_50": 4, "sku_54": 2, "sku_55": 1, "sku_56": 5, "sku_59": 5, "sku_63": 3, "sku_65": 5, "sku_66": 5}, "SANDRA TORRICO": {"sku_2": 12, "sku_3": 26, "sku_4": 7, "sku_5": 16, "sku_6": 15, "sku_7": 2, "sku_8": 2, "sku_9": 4, "sku_14": 1, "sku_16": 5, "sku_18": 1, "sku_20": 18, "sku_23": 8, "sku_26": 1, "sku_27": 1, "sku_30": 1, "sku_32": 1, "sku_34": 1, "sku_35": 1, "sku_37": 1, "sku_38": 4, "sku_43": 1, "sku_48": 3, "sku_50": 2, "sku_55": 1, "sku_59": 12, "sku_61": 2, "sku_65": 8, "sku_66": 2}, "SANDRA ZENTENO": {"sku_3": 60, "sku_5": 22, "sku_6": 8, "sku_10": 2, "sku_16": 4, "sku_18": 11, "sku_26": 7, "sku_48": 2, "sku_55": 10, "sku_59": 2}, "MAURICIO SAUL AYALA": {"sku_1": 183, "sku_2": 43, "sku_3": 36, "sku_5": 100, "sku_6": 109, "sku_7": 26, "sku_8": 7, "sku_9": 9, "sku_14": 9, "sku_16": 23, "sku_17": 14, "sku_19": 3, "sku_20": 31, "sku_25": 5, "sku_26": 11, "sku_37": 6, "sku_38": 53, "sku_39": 34, "sku_40": 17, "sku_45": 12, "sku_48": 31, "sku_55": 14, "sku_59": 49, "sku_60": 34}, "JUANA ESPINOZA": {"sku_2": 14, "sku_3": 6, "sku_5": 17, "sku_6": 12, "sku_10": 2, "sku_16": 6, "sku_18": 9, "sku_38": 1, "sku_59": 3, "sku_60": 2}, "MARIA TELLES": {"sku_1": 102, "sku_3": 256, "sku_4": 73, "sku_5": 197, "sku_6": 116, "sku_7": 158, "sku_8": 72, "sku_9": 247, "sku_14": 132, "sku_15": 16, "sku_16": 140, "sku_17": 5, "sku_20": 15, "sku_21": 15, "sku_23": 26, "sku_24": 25, "sku_25": 6, "sku_38": 41, "sku_40": 37, "sku_41": 4, "sku_43": 77, "sku_45": 37, "sku_48": 81, "sku_49": 5, "sku_50": 189, "sku_55": 48, "sku_57": 43, "sku_58": 10, "sku_59": 704, "sku_60": 141, "sku_61": 23, "sku_63": 57, "sku_65": 75, "sku_66": 32}, "ERICK ROCHA": {"sku_1": 17, "sku_2": 6, "sku_3": 42, "sku_4": 6, "sku_5": 120, "sku_6": 29, "sku_7": 25, "sku_9": 20, "sku_10": 8, "sku_11": 6, "sku_12": 1, "sku_14": 8, "sku_17": 12, "sku_23": 6, "sku_25": 4, "sku_26": 1, "sku_30": 2, "sku_31": 1, "sku_34": 4, "sku_37": 6, "sku_45": 35, "sku_48": 13, "sku_50": 2, "sku_54": 7, "sku_55": 26, "sku_56": 34, "sku_58": 3, "sku_59": 130, "sku_61": 15, "sku_65": 30, "sku_66": 25}, "TRALOCOM": {"sku_1": 48, "sku_2": 69, "sku_3": 683, "sku_4": 38, "sku_5": 79, "sku_6": 67, "sku_7": 17, "sku_8": 31, "sku_9": 11, "sku_11": 6, "sku_12": 2, "sku_13": 9, "sku_14": 19, "sku_15": 10, "sku_16": 1, "sku_18": 14, "sku_20": 9, "sku_22": 6, "sku_23": 1, "sku_24": 14, "sku_26": 4, "sku_27": 2, "sku_29": 5, "sku_30": 3, "sku_31": 3, "sku_32": 4, "sku_33": 3, "sku_34": 1, "sku_35": 2, "sku_36": 3, "sku_37": 2, "sku_38": 21, "sku_39": 14, "sku_42": 3, "sku_43": 40, "sku_44": 19, "sku_45": 12, "sku_47": 30, "sku_48": 22, "sku_49": 31, "sku_50": 7, "sku_51": 17, "sku_54": 2, "sku_55": 11, "sku_57": 38, "sku_58": 5, "sku_59": 61, "sku_60": 18, "sku_61": 13, "sku_62": 4, "sku_63": 4, "sku_64": 2, "sku_65": 35, "sku_66": 20}}, "LPZ": {"JOSE LUIS GUTIERREZ": {"sku_1": 278, "sku_2": 79, "sku_3": 185, "sku_4": 44, "sku_5": 458, "sku_6": 475, "sku_7": 60, "sku_8": 61, "sku_9": 13, "sku_10": 1, "sku_11": 1, "sku_12": 2, "sku_13": 11, "sku_14": 16, "sku_15": 2, "sku_16": 6, "sku_17": 32, "sku_19": 26, "sku_20": 2, "sku_24": 2, "sku_25": 21, "sku_26": 7, "sku_29": 10, "sku_30": 7, "sku_31": 11, "sku_33": 10, "sku_34": 9, "sku_36": 7, "sku_38": 14, "sku_39": 51, "sku_40": 56, "sku_41": 1, "sku_42": 59, "sku_43": 95, "sku_44": 16, "sku_47": 50, "sku_48": 37, "sku_50": 45, "sku_51": 72, "sku_54": 9, "sku_55": 43, "sku_56": 17, "sku_57": 94, "sku_58": 16, "sku_59": 102, "sku_60": 54, "sku_61": 43, "sku_62": 39, "sku_65": 28, "sku_66": 13}, "UFMAGU": {"sku_1": 384, "sku_2": 118, "sku_3": 73, "sku_4": 112, "sku_5": 364, "sku_6": 190, "sku_7": 101, "sku_8": 17, "sku_9": 62, "sku_13": 2, "sku_16": 7, "sku_17": 8, "sku_18": 3, "sku_19": 17, "sku_20": 26, "sku_21": 11, "sku_22": 24, "sku_23": 19, "sku_24": 8, "sku_25": 7, "sku_26": 1, "sku_30": 2, "sku_33": 9, "sku_34": 7, "sku_36": 7, "sku_38": 1, "sku_39": 42, "sku_40": 173, "sku_42": 33, "sku_43": 20, "sku_47": 37, "sku_50": 31, "sku_51": 12, "sku_55": 6, "sku_56": 23, "sku_58": 7, "sku_59": 131, "sku_60": 73, "sku_61": 44, "sku_62": 18, "sku_63": 5, "sku_65": 22, "sku_66": 8}, "ARMINIA MAMANI": {"sku_1": 398, "sku_2": 189, "sku_3": 374, "sku_4": 238, "sku_5": 661, "sku_6": 253, "sku_7": 8, "sku_8": 9, "sku_9": 62, "sku_11": 3, "sku_13": 4, "sku_14": 74, "sku_15": 6, "sku_16": 21, "sku_17": 13, "sku_18": 34, "sku_19": 19, "sku_20": 1, "sku_21": 12, "sku_22": 11, "sku_23": 15, "sku_24": 5, "sku_25": 8, "sku_26": 2, "sku_29": 18, "sku_30": 19, "sku_31": 6, "sku_33": 9, "sku_34": 1, "sku_36": 3, "sku_37": 5, "sku_38": 44, "sku_39": 35, "sku_40": 398, "sku_42": 20, "sku_43": 1, "sku_47": 84, "sku_48": 33, "sku_49": 6, "sku_50": 52, "sku_51": 88, "sku_54": 7, "sku_55": 48, "sku_56": 19, "sku_57": 154, "sku_58": 21, "sku_59": 8, "sku_60": 38, "sku_61": 73, "sku_62": 13, "sku_63": 13, "sku_64": 18, "sku_65": 107, "sku_66": 65}, "VLADICOM S.R.L.": {}, "NORDIX": {"sku_1": 5, "sku_2": 9, "sku_3": 7, "sku_4": 6, "sku_5": 13, "sku_7": 25, "sku_8": 14, "sku_9": 12, "sku_14": 12, "sku_26": 3, "sku_27": 1, "sku_30": 1, "sku_38": 3, "sku_40": 2, "sku_42": 5, "sku_43": 2, "sku_44": 5, "sku_47": 9, "sku_48": 1, "sku_50": 4, "sku_51": 12, "sku_54": 7, "sku_55": 3, "sku_57": 15, "sku_58": 5, "sku_59": 21, "sku_61": 1, "sku_64": 4, "sku_65": 11, "sku_66": 6}, "GRUPO ESTRATEGO BOLIVIA S.R.L.": {"sku_1": 50, "sku_2": 9, "sku_3": 25, "sku_5": 61, "sku_6": 52, "sku_7": 15, "sku_9": 21, "sku_34": 9, "sku_36": 3, "sku_37": 2, "sku_38": 6, "sku_40": 11, "sku_42": 1, "sku_43": 3, "sku_44": 6, "sku_45": 4, "sku_47": 64, "sku_49": 5, "sku_50": 19, "sku_51": 80, "sku_52": 2, "sku_54": 3, "sku_55": 1, "sku_56": 6, "sku_57": 28, "sku_58": 42, "sku_59": 49, "sku_60": 58, "sku_61": 14, "sku_62": 13, "sku_63": 2, "sku_65": 28, "sku_66": 18}, "MB WEYMAR": {"sku_1": 26, "sku_2": 1, "sku_3": 11, "sku_4": 17, "sku_5": 20, "sku_6": 17, "sku_7": 6, "sku_8": 8, "sku_14": 9, "sku_17": 5, "sku_19": 2, "sku_20": 8, "sku_21": 7, "sku_34": 1, "sku_38": 9, "sku_39": 6, "sku_40": 28, "sku_42": 9, "sku_43": 1, "sku_45": 1, "sku_47": 7, "sku_48": 5, "sku_50": 9, "sku_51": 6, "sku_52": 6, "sku_54": 2, "sku_56": 7, "sku_57": 14, "sku_58": 6, "sku_59": 23, "sku_60": 14, "sku_61": 3}, "JUAN CALLE": {"sku_1": 391, "sku_2": 110, "sku_3": 62, "sku_4": 52, "sku_5": 36, "sku_6": 33, "sku_7": 30, "sku_8": 21, "sku_9": 29, "sku_12": 7, "sku_13": 19, "sku_17": 29, "sku_19": 6, "sku_25": 2, "sku_26": 2, "sku_29": 3, "sku_30": 2, "sku_31": 7, "sku_33": 4, "sku_34": 11, "sku_36": 1, "sku_37": 20, "sku_38": 47, "sku_39": 46, "sku_42": 24, "sku_44": 30, "sku_47": 29, "sku_48": 2, "sku_51": 42, "sku_54": 6, "sku_56": 14, "sku_57": 320, "sku_58": 47, "sku_59": 2, "sku_61": 26, "sku_62": 24, "sku_63": 18, "sku_65": 58, "sku_66": 10}}, "SCZ": {"JOSE QUISBERT": {"sku_0": 208, "sku_1": 340, "sku_2": 395, "sku_3": 280, "sku_4": 455, "sku_5": 720, "sku_6": 50, "sku_7": 35, "sku_8": 20, "sku_13": 35, "sku_15": 93, "sku_16": 36, "sku_17": 22, "sku_19": 93, "sku_22": 35, "sku_23": 8, "sku_25": 20, "sku_28": 37, "sku_29": 32, "sku_30": 19, "sku_33": 18, "sku_35": 22, "sku_36": 36, "sku_37": 98, "sku_38": 228, "sku_39": 441, "sku_42": 20, "sku_44": 239, "sku_46": 50, "sku_47": 80, "sku_50": 30, "sku_58": 191, "sku_60": 338, "sku_61": 10, "sku_62": 25, "sku_64": 210, "sku_65": 40}, "DAVID GUTIERREZ": {"sku_0": 69, "sku_1": 79, "sku_2": 517, "sku_3": 46, "sku_4": 198, "sku_5": 95, "sku_6": 54, "sku_7": 66, "sku_10": 4, "sku_12": 20, "sku_16": 20, "sku_17": 10, "sku_18": 10, "sku_19": 33, "sku_20": 24, "sku_21": 3, "sku_22": 17, "sku_23": 43, "sku_25": 9, "sku_29": 10, "sku_30": 1, "sku_31": 4, "sku_32": 6, "sku_33": 2, "sku_34": 3, "sku_35": 7, "sku_36": 5, "sku_37": 20, "sku_38": 16, "sku_39": 1, "sku_40": 50, "sku_41": 25, "sku_43": 66, "sku_44": 27, "sku_46": 17, "sku_47": 50, "sku_48": 9, "sku_49": 28, "sku_50": 23, "sku_54": 39, "sku_56": 19, "sku_59": 7, "sku_60": 109, "sku_61": 29, "sku_62": 48, "sku_64": 47, "sku_65": 3}, "EUDI COLODRO": {"sku_13": 11, "sku_15": 12, "sku_39": 38, "sku_43": 19, "sku_47": 11, "sku_48": 5, "sku_49": 8, "sku_58": 28, "sku_59": 13, "sku_60": 17, "sku_61": 9, "sku_64": 20, "sku_65": 18}, "ISABEL QUISPE": {"sku_1": 16, "sku_2": 12, "sku_4": 8, "sku_5": 12, "sku_6": 2, "sku_21": 1, "sku_22": 1, "sku_29": 3, "sku_39": 6, "sku_58": 4, "sku_59": 2, "sku_60": 2, "sku_63": 1, "sku_64": 3, "sku_65": 6}, "NATALY RODRIGUEZ": {"sku_2": 17, "sku_5": 16}, "JUDITH CONDORI": {"sku_4": 22, "sku_5": 12, "sku_6": 25, "sku_15": 1, "sku_20": 1, "sku_22": 2, "sku_25": 1, "sku_29": 3, "sku_37": 4, "sku_38": 2, "sku_39": 5, "sku_58": 3, "sku_59": 3, "sku_60": 6, "sku_61": 4, "sku_64": 5, "sku_65": 6}, "CARMEN GARCIA": {"sku_2": 26, "sku_3": 1, "sku_4": 27, "sku_5": 17, "sku_6": 2, "sku_8": 25, "sku_9": 7, "sku_13": 14, "sku_15": 14, "sku_17": 10, "sku_19": 1, "sku_29": 4, "sku_35": 3, "sku_36": 5, "sku_38": 18, "sku_39": 12, "sku_44": 15, "sku_46": 5, "sku_47": 3, "sku_54": 9, "sku_62": 2, "sku_64": 13}, "ROLANDO MENDOZA": {"sku_0": 10, "sku_1": 3, "sku_2": 4, "sku_3": 8, "sku_4": 13, "sku_5": 6, "sku_6": 30, "sku_7": 8, "sku_16": 2, "sku_17": 1, "sku_18": 1, "sku_19": 1, "sku_22": 14, "sku_25": 2, "sku_29": 1, "sku_30": 10, "sku_31": 2, "sku_32": 2, "sku_33": 1, "sku_35": 2, "sku_36": 6, "sku_37": 8, "sku_38": 6, "sku_39": 17, "sku_41": 1, "sku_42": 2, "sku_43": 23, "sku_44": 2, "sku_46": 7, "sku_48": 4, "sku_49": 9, "sku_53": 5, "sku_54": 9, "sku_58": 8, "sku_60": 16, "sku_62": 4, "sku_64": 2, "sku_65": 2}, "LOF": {"sku_0": 5, "sku_2": 37, "sku_3": 10, "sku_5": 1, "sku_6": 2, "sku_8": 9, "sku_12": 7, "sku_15": 4, "sku_18": 2, "sku_22": 6, "sku_25": 2, "sku_28": 1, "sku_33": 1, "sku_34": 1, "sku_37": 8, "sku_38": 10, "sku_43": 5, "sku_44": 13, "sku_47": 5, "sku_48": 1, "sku_49": 3, "sku_50": 7, "sku_54": 6, "sku_58": 19, "sku_60": 18, "sku_61": 9, "sku_64": 14, "sku_65": 9}, "HUDSON RICHAR FLORES": {"sku_1": 25, "sku_2": 17, "sku_3": 12, "sku_4": 4, "sku_5": 4, "sku_6": 12, "sku_8": 2, "sku_13": 2, "sku_19": 3, "sku_22": 9, "sku_30": 2, "sku_37": 6, "sku_38": 2, "sku_39": 22, "sku_44": 8, "sku_47": 2, "sku_58": 4, "sku_60": 3, "sku_65": 5}, "JAVIER PAUCARI": {"sku_1": 2, "sku_2": 28, "sku_3": 10, "sku_4": 25, "sku_5": 22, "sku_6": 2, "sku_7": 2, "sku_8": 4, "sku_9": 5, "sku_13": 5, "sku_15": 11, "sku_19": 10, "sku_21": 2, "sku_22": 11, "sku_25": 1, "sku_33": 1, "sku_36": 2, "sku_37": 15, "sku_38": 6, "sku_39": 85, "sku_40": 3, "sku_41": 2, "sku_43": 3, "sku_44": 9, "sku_47": 4, "sku_58": 4, "sku_59": 4, "sku_64": 5, "sku_65": 12}, "CORPORACION LOGISTICA": {"sku_1": 34, "sku_2": 24, "sku_3": 29, "sku_4": 7, "sku_5": 45, "sku_6": 44, "sku_7": 36, "sku_8": 19, "sku_15": 36, "sku_16": 5, "sku_17": 2, "sku_19": 3, "sku_20": 8, "sku_21": 5, "sku_22": 25, "sku_23": 13, "sku_24": 2, "sku_25": 4, "sku_28": 1, "sku_30": 2, "sku_35": 11, "sku_38": 55, "sku_41": 9, "sku_42": 11, "sku_46": 8, "sku_47": 32, "sku_49": 15, "sku_50": 8, "sku_54": 4, "sku_58": 36, "sku_59": 6, "sku_60": 59, "sku_61": 16, "sku_62": 5, "sku_64": 28, "sku_65": 19}, "MELQUI": {"sku_1": 9, "sku_2": 51, "sku_5": 28, "sku_8": 2, "sku_14": 6, "sku_15": 1, "sku_22": 3, "sku_54": 8, "sku_57": 3, "sku_58": 8, "sku_62": 6, "sku_64": 7, "sku_65": 3}, "ALCIDES JOHANSIN": {"sku_0": 37, "sku_2": 274, "sku_3": 57, "sku_4": 68, "sku_5": 71, "sku_6": 17, "sku_8": 16, "sku_13": 7, "sku_15": 1, "sku_16": 12, "sku_17": 6, "sku_18": 6, "sku_19": 11, "sku_22": 18, "sku_25": 9, "sku_29": 4, "sku_34": 7, "sku_37": 28, "sku_38": 17, "sku_39": 67, "sku_42": 10, "sku_43": 28, "sku_46": 18, "sku_47": 6, "sku_49": 6, "sku_53": 1, "sku_54": 10, "sku_56": 36, "sku_58": 78, "sku_60": 116, "sku_61": 20, "sku_62": 6, "sku_64": 152, "sku_65": 69}, "DRY FAST S.R.L.": {"sku_0": 75, "sku_1": 53, "sku_2": 68, "sku_3": 156, "sku_4": 59, "sku_5": 121, "sku_6": 42, "sku_7": 14, "sku_8": 29, "sku_9": 42, "sku_10": 12, "sku_11": 9, "sku_13": 7, "sku_15": 6, "sku_16": 18, "sku_17": 15, "sku_18": 7, "sku_19": 13, "sku_22": 24, "sku_23": 7, "sku_26": 8, "sku_29": 15, "sku_30": 12, "sku_33": 7, "sku_36": 5, "sku_37": 49, "sku_38": 42, "sku_39": 99, "sku_42": 22, "sku_43": 71, "sku_46": 76, "sku_47": 36, "sku_48": 6, "sku_49": 14, "sku_53": 13, "sku_54": 17, "sku_56": 49, "sku_57": 26, "sku_60": 102, "sku_62": 8, "sku_64": 314, "sku_65": 110}, "ORLANDO QUISPE": {"sku_2": 50, "sku_13": 1, "sku_22": 6, "sku_38": 2, "sku_43": 3, "sku_46": 4, "sku_47": 3, "sku_48": 1, "sku_54": 18, "sku_60": 11, "sku_64": 24, "sku_65": 4}, "FREDDY WILLAM": {"sku_0": 24, "sku_1": 30, "sku_2": 498, "sku_3": 34, "sku_4": 202, "sku_5": 42, "sku_6": 53, "sku_7": 36, "sku_8": 13, "sku_9": 25, "sku_10": 5, "sku_11": 3, "sku_12": 9, "sku_13": 29, "sku_15": 10, "sku_17": 13, "sku_19": 1, "sku_22": 19, "sku_24": 2, "sku_25": 4, "sku_26": 2, "sku_29": 16, "sku_30": 4, "sku_31": 1, "sku_33": 7, "sku_34": 6, "sku_35": 2, "sku_36": 3, "sku_37": 80, "sku_38": 93, "sku_39": 241, "sku_40": 112, "sku_41": 36, "sku_42": 13, "sku_43": 113, "sku_46": 10, "sku_47": 23, "sku_48": 20, "sku_49": 16, "sku_50": 17, "sku_53": 7, "sku_54": 10, "sku_56": 66, "sku_57": 9, "sku_58": 104, "sku_59": 42, "sku_60": 72, "sku_61": 22, "sku_62": 3, "sku_63": 1, "sku_64": 207, "sku_65": 107}, "SILVIA ACHA": {"sku_1": 2, "sku_2": 20, "sku_3": 4, "sku_4": 22, "sku_5": 6, "sku_8": 4, "sku_15": 35, "sku_19": 6, "sku_20": 4, "sku_22": 4, "sku_38": 4, "sku_40": 14, "sku_47": 6, "sku_53": 1, "sku_58": 12, "sku_60": 7, "sku_65": 7}, "FLEMM S.R.L.": {"sku_1": 38, "sku_2": 90, "sku_3": 18, "sku_4": 53, "sku_5": 88, "sku_6": 71, "sku_9": 2, "sku_10": 18, "sku_11": 14, "sku_16": 10, "sku_18": 10, "sku_19": 14, "sku_20": 5, "sku_23": 33, "sku_25": 10, "sku_26": 13, "sku_29": 15, "sku_30": 9, "sku_31": 6, "sku_37": 21, "sku_38": 8, "sku_39": 18, "sku_43": 12, "sku_48": 7, "sku_49": 12, "sku_50": 16, "sku_54": 14, "sku_56": 23, "sku_58": 21, "sku_60": 71, "sku_61": 32, "sku_62": 1, "sku_64": 34, "sku_65": 11}, "VALESCO": {"sku_1": 4, "sku_2": 25, "sku_3": 3, "sku_5": 11, "sku_6": 9, "sku_9": 3, "sku_25": 1, "sku_29": 3, "sku_37": 3, "sku_38": 4, "sku_43": 13, "sku_44": 6, "sku_49": 2, "sku_54": 8, "sku_57": 6, "sku_62": 1, "sku_65": 9}, "EFIFAST S.R.L.": {"sku_0": 88, "sku_1": 98, "sku_2": 145, "sku_3": 1, "sku_5": 11, "sku_6": 12, "sku_7": 4, "sku_9": 7, "sku_15": 30, "sku_22": 1, "sku_23": 6, "sku_24": 3, "sku_29": 11, "sku_37": 26, "sku_38": 17, "sku_39": 12, "sku_42": 3, "sku_43": 36, "sku_46": 5, "sku_47": 3, "sku_54": 4, "sku_56": 8, "sku_57": 7, "sku_58": 6, "sku_60": 7, "sku_62": 1, "sku_64": 3}, "HAKA S.R.L": {"sku_0": 137, "sku_1": 134, "sku_2": 676, "sku_3": 181, "sku_4": 42, "sku_5": 50, "sku_6": 13, "sku_8": 2, "sku_10": 5, "sku_11": 5, "sku_13": 33, "sku_15": 78, "sku_16": 15, "sku_19": 15, "sku_22": 9, "sku_25": 7, "sku_28": 1, "sku_29": 10, "sku_30": 2, "sku_35": 4, "sku_37": 52, "sku_38": 47, "sku_39": 148, "sku_41": 4, "sku_42": 6, "sku_43": 229, "sku_44": 189, "sku_46": 29, "sku_47": 40, "sku_48": 2, "sku_49": 11, "sku_50": 6, "sku_54": 41, "sku_56": 86, "sku_57": 4, "sku_58": 81, "sku_59": 18, "sku_60": 89, "sku_61": 7, "sku_62": 19, "sku_64": 72, "sku_65": 45}, "JOSE CARLOS FLORES": {}, "MARIA DE LOS ANGELES": {}}, "ORURO": {"POSSIBLE REPRESENTANTES Y DISTRIBUIDORES S.R.L": {"sku_1": 136, "sku_2": 33, "sku_3": 547, "sku_4": 25, "sku_5": 104, "sku_6": 127, "sku_7": 71, "sku_8": 12, "sku_9": 10, "sku_11": 23, "sku_13": 7, "sku_14": 35, "sku_16": 28, "sku_18": 9, "sku_19": 26, "sku_20": 87, "sku_23": 36, "sku_24": 21, "sku_25": 33, "sku_26": 33, "sku_34": 5, "sku_36": 2, "sku_37": 22, "sku_38": 3, "sku_39": 181, "sku_43": 30, "sku_47": 33, "sku_48": 35, "sku_50": 58, "sku_51": 2, "sku_54": 3, "sku_55": 47, "sku_57": 207, "sku_58": 9, "sku_59": 168, "sku_60": 101, "sku_61": 53, "sku_62": 26, "sku_63": 29, "sku_65": 70, "sku_66": 57}}, "POTOSI": {"CBIL CUATRODIEZ S.R.L.": {"sku_1": 70, "sku_2": 33, "sku_3": 573, "sku_4": 299, "sku_5": 92, "sku_6": 134, "sku_9": 12, "sku_14": 36, "sku_16": 30, "sku_18": 23, "sku_21": 4, "sku_23": 24, "sku_24": 1, "sku_26": 5, "sku_29": 7, "sku_31": 1, "sku_33": 1, "sku_36": 16, "sku_38": 4, "sku_39": 5, "sku_42": 1, "sku_43": 20, "sku_47": 41, "sku_48": 4, "sku_49": 10, "sku_50": 28, "sku_51": 16, "sku_55": 8, "sku_56": 4, "sku_57": 1, "sku_59": 77, "sku_61": 20, "sku_63": 30, "sku_65": 3}}, "SUCRE": {"KAREN GUTIÉRREZ": {"sku_1": 12, "sku_2": 9, "sku_3": 36, "sku_4": 1, "sku_5": 4, "sku_6": 2, "sku_7": 17, "sku_8": 8, "sku_11": 2, "sku_14": 34, "sku_16": 62, "sku_17": 11, "sku_19": 1, "sku_26": 4, "sku_29": 1, "sku_30": 4, "sku_31": 4, "sku_32": 1, "sku_34": 6, "sku_35": 1, "sku_36": 8, "sku_39": 2, "sku_43": 10, "sku_44": 8, "sku_45": 7, "sku_47": 4, "sku_49": 5, "sku_50": 17, "sku_51": 2, "sku_55": 7, "sku_57": 10, "sku_58": 2, "sku_59": 25, "sku_60": 20, "sku_61": 18, "sku_62": 21, "sku_66": 15}}, "TARIJA": {"MACROSUR DISTRIBUIDORES S.R.L.": {"sku_1": 59, "sku_3": 1202, "sku_4": 23, "sku_6": 469, "sku_7": 34, "sku_8": 5, "sku_9": 6, "sku_11": 1, "sku_12": 2, "sku_20": 2, "sku_22": 1, "sku_23": 8, "sku_25": 17, "sku_26": 14, "sku_27": 1, "sku_31": 1, "sku_32": 8, "sku_33": 1, "sku_34": 5, "sku_35": 2, "sku_36": 1, "sku_37": 4, "sku_38": 10, "sku_39": 6, "sku_40": 109, "sku_41": 25, "sku_43": 2, "sku_44": 29, "sku_45": 81, "sku_46": 7, "sku_47": 44, "sku_48": 147, "sku_49": 11, "sku_50": 68, "sku_51": 14, "sku_53": 9, "sku_54": 2, "sku_55": 36, "sku_56": 27, "sku_57": 94, "sku_58": 13, "sku_59": 338, "sku_60": 92, "sku_61": 41, "sku_62": 17, "sku_63": 37, "sku_64": 10, "sku_65": 162, "sku_66": 104}}};
+
 const DIAS_RETENCION_FOTOS = 30;
 
 /* =================================================================
@@ -282,6 +287,51 @@ async function saveRelevamientoActual(almacenId){
   const rel = STATE.relevamientos[almacenId];
   const clienteId = STATE.clienteId;
   await DB.saveRelevamiento(almacenId, clienteId, rel);
+}
+
+/* Carga el stock de agosto (IMPORT_AGOSTO) como si ya hubiera sido relevado con la
+   app: crea un almacén "Depósito Principal" por cliente (si no existe) y guarda el
+   conteo ya aprobado. Es seguro volver a ejecutarlo: reemplaza el mismo almacén. */
+async function importarAgosto(onProgreso){
+  const FECHA_IMPORT = "2026-08-01T12:00:00.000Z";
+  let huboClientesNuevos = false;
+  let hechos = 0, total = 0;
+  Object.values(IMPORT_AGOSTO).forEach(cs=>{ total += Object.keys(cs).length; });
+
+  for(const ciudad of Object.keys(IMPORT_AGOSTO)){
+    const clientesCiudad = IMPORT_AGOSTO[ciudad];
+    for(const nombreCliente of Object.keys(clientesCiudad)){
+      const conteos = clientesCiudad[nombreCliente];
+      let cliente = STATE.clientes.find(c=>c.ciudad===ciudad && c.nombre.trim().toUpperCase()===nombreCliente.trim().toUpperCase());
+      if(!cliente){
+        cliente = { id: uid("cli"), ciudad, nombre: nombreCliente, codigo:"", vendedor:"", vendedorTelefono:"", almacenes: [], ventasProm:{} };
+        STATE.clientes.push(cliente);
+        huboClientesNuevos = true;
+      }
+      cliente.almacenes = cliente.almacenes || [];
+      let almacen = cliente.almacenes.find(a=>a.nombre==="Depósito Principal") || cliente.almacenes[0];
+      if(!almacen){
+        almacen = { id: uid("alm"), nombre: "Depósito Principal" };
+        cliente.almacenes.push(almacen);
+        huboClientesNuevos = true;
+      }
+      const rel = getRelevamiento(almacen.id);
+      rel.conteos = conteos;
+      rel.fechaCreacion = rel.fechaCreacion || FECHA_IMPORT;
+      rel.fechaConteo = FECHA_IMPORT;
+      rel.relevadorNombre = "Importado desde Excel (agosto)";
+      rel.clienteAcuerdo = true;
+      rel.firmaTipo = "nombre";
+      rel.firmaNombreTexto = "Importación inicial";
+      rel.fechaFirma = FECHA_IMPORT;
+      rel.estadoVendedor = "aprobado";
+      await DB.saveRelevamiento(almacen.id, cliente.id, rel);
+      hechos++;
+      if(onProgreso) onProgreso(hechos, total, nombreCliente);
+    }
+  }
+  if(huboClientesNuevos) await DB.saveClientes(STATE.clientes);
+  return hechos;
 }
 
 function seedClientesFaltantes(){
@@ -411,6 +461,11 @@ function screenLogin(){
   <header class="top"><div class="mark">RS</div><div class="titles"><h1>Relevamiento de Stock</h1><div class="sub">Todo Brillo · Carissa · Revive · Fixer</div></div></header>
   <main>
     <div class="mini-note">Cada ciudad tiene su propio acceso. Al ingresar solo vas a ver los clientes de tu ciudad.</div>
+    <div class="mini-note" style="background:${USE_BACKEND?'var(--brand-soft)':'#f5e3e0'};border-color:${USE_BACKEND?'var(--brand)':'#dba79f'};color:${USE_BACKEND?'var(--brand-dark)':'#7a2e2e'};">
+      ${USE_BACKEND
+        ? "🟢 Conectado a tu base de datos real. Los datos se comparten entre todos los que entren a esta app."
+        : "🟠 Sin backend conectado: los datos se guardan solo en este navegador (no se comparten con otros celulares). Configurá API_URL para conectar el backend real."}
+    </div>
     <div class="mini-note" style="background:#f6e9d3;border-color:#e6cf9e;color:#7a5310;">
       🧪 Modo de pruebas: por ahora no pide contraseña. Elegí tu ciudad y tu nombre para entrar.
     </div>
@@ -499,7 +554,7 @@ function screenNuevoCliente(){
 }
 
 function almacenListoParaConteo(rel){
-  return !!(rel && rel.gps && rel.fotos && rel.fotos.filter(Boolean).length===4);
+  return !!(rel && rel.gps && rel.fotos && rel.fotos.slice(0,2).filter(Boolean).length===2);
 }
 
 /* Una vez enviado a aprobación (o ya aprobado/rechazado), el relevador ya no puede
@@ -567,7 +622,7 @@ function screenAlmacenes(){
         const gps = rel && rel.gps;
         const fotos = rel ? rel.fotos.filter(Boolean).length : 0;
         return `<div class="list-item" data-almacen="${a.id}">
-          <div><b>${a.nombre}</b><div class="meta">${bloq? "🔒 enviado, no editable":(!listo? "⚠️ Falta ubicación/fotos para habilitar el conteo":(done? "Conteo cargado":"Listo para contar"))} · ${gps?"📍 ubicado":"📍 sin ubicar"} · 📷 ${fotos}/4${rel&&rel.fotosEliminadas?" (fotos vencidas)":""}</div></div>
+          <div><b>${a.nombre}</b><div class="meta">${bloq? "🔒 enviado, no editable":(!listo? "⚠️ Falta ubicación/fotos para habilitar el conteo":(done? "Conteo cargado":"Listo para contar"))} · ${gps?"📍 ubicado":"📍 sin ubicar"} · 📷 ${fotos}/2${rel&&rel.fotosEliminadas?" (fotos vencidas)":""}</div></div>
           <span class="chev">›</span>
         </div>`;
       }).join("")}
@@ -612,12 +667,12 @@ function getAlmacen(){ const c = getCliente(STATE.clienteId); return (c.almacene
 function screenUbicacionFotos(){
   const a = getAlmacen();
   const rel = getRelevamiento(STATE.almacenId);
-  const labels = ["Frente","Derecha","Fondo","Izquierda"];
+  const labels = ["Frente del almacén","Interior del almacén"];
   const listo = almacenListoParaConteo(rel);
   return `
   ${header("Paso 1: ubicación y fotos",a.nombre,true,"almacenes")}
   <main>
-    <div class="mini-note">Antes de contar la mercadería, registrá la ubicación GPS y las 4 fotos del almacén. El conteo se habilita recién cuando completes esto. Las fotos se eliminan automáticamente a los ${DIAS_RETENCION_FOTOS} días; el conteo, la ubicación y el historial de aprobación quedan guardados igual.</div>
+    <div class="mini-note">Antes de contar la mercadería, registrá la ubicación GPS y 2 fotos del almacén. El conteo se habilita recién cuando completes esto. Las fotos se eliminan automáticamente a los ${DIAS_RETENCION_FOTOS} días; el conteo, la ubicación y el historial de aprobación quedan guardados igual.</div>
     <h2 class="section-title">1. Geolocalización</h2>
     <div class="gps-box">
       ${rel.gps ? `<div class="ok">📍 Ubicación capturada<br><span style="font-weight:400;color:#556">lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)} (±${Math.round(rel.gps.acc)}m)</span></div>`
@@ -625,10 +680,10 @@ function screenUbicacionFotos(){
     </div>
     <button class="btn btn-outline" id="capturarGps" style="margin-top:10px;">${rel.gps?"Volver a capturar ubicación":"Capturar ubicación GPS"}</button>
 
-    <h2 class="section-title" style="margin-top:22px;">2. Fotos 360° del almacén</h2>
-    <div class="hint" style="margin-bottom:10px;">Tomá las 4 fotos, una por cada lado del almacén.${rel.fotosEliminadas?' Las fotos anteriores vencieron y fueron eliminadas; podés volver a tomarlas.':''}</div>
-    <div class="photo-grid">
-      ${[0,1,2,3].map(i=>`
+    <h2 class="section-title" style="margin-top:22px;">2. Fotos del almacén</h2>
+    <div class="hint" style="margin-bottom:10px;">Tomá 2 fotos: el frente y el interior del almacén.${rel.fotosEliminadas?' Las fotos anteriores vencieron y fueron eliminadas; podés volver a tomarlas.':''}</div>
+    <div class="photo-grid" style="grid-template-columns:repeat(2,1fr);">
+      ${[0,1].map(i=>`
         <div class="photo-slot ${rel.fotos[i]?'filled':''}">
           ${rel.fotos[i]?`<img src="${rel.fotos[i]}">`:`<span class="lbl">${labels[i]}</span>`}
           <input type="file" accept="image/*" capture="environment" data-foto="${i}">
@@ -729,6 +784,7 @@ function screenVendedorLista(){
   return `
   ${header(esAdministrador()?"Panel de administrador":"Aprobaciones",nombreCiudad(STATE.ciudad)+" · "+STATE.userName,false)}
   <main>
+    ${esAdministrador()?`<button class="btn btn-ghost" id="importarAgostoBtn" style="margin-bottom:16px;">📥 Importar relevamiento de agosto (Excel)</button>`:""}
     ${todos.length===0?`<div class="empty"><div class="big">📭</div>Todavía no hay clientes.</div>`:
     grupos.map(g=>`
       <div class="vendor-group">
@@ -766,7 +822,7 @@ function screenVendedorDetalle(){
         <div class="hint">Finalizado: ${finalizado?"Sí ✔":"No, todavía en curso"}</div>
         <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
         <div class="hint">Ubicación: ${rel.gps?`lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)}`:"no capturada"}</div>
-        <div class="hint">Fotos del almacén: ${rel.fotos.filter(Boolean).length}/4${rel.fotosEliminadas?" (vencidas y eliminadas)":""}</div>
+        <div class="hint">Fotos del almacén: ${rel.fotos.filter(Boolean).length}/2${rel.fotosEliminadas?" (vencidas y eliminadas)":""}</div>
         <div class="hint">Conformidad del cliente: ${rel.clienteAcuerdo===true?"Sí, firmó":rel.clienteAcuerdo===false?"No conforme":"pendiente"}${rel.firmaTipo?" · "+(rel.firmaTipo==="nombre"?"nombre escrito":"firma en pantalla"):""}</div>
         ${rel.firmaImg?`<div class="hint">Firma registrada ✔</div>`:""}
         ${rel.fotos.some(Boolean) ? `<div class="photo-grid" style="margin-top:10px;">${rel.fotos.map(f=>f?`<div class="photo-slot filled"><img src="${f}"></div>`:'').join("")}</div>`:""}
@@ -1164,6 +1220,19 @@ function bindEvents(){
   $app.querySelectorAll("[data-editar-almacen]").forEach(el=>{
     el.addEventListener("click", ()=>{ abrirAlmacen(el.dataset.editarAlmacen); });
   });
+  const importarAgostoBtn = document.getElementById("importarAgostoBtn");
+  if(importarAgostoBtn){
+    importarAgostoBtn.addEventListener("click", async ()=>{
+      const ok = confirm('Esto va a cargar el stock de agosto (del Excel) en el almacén "Depósito Principal" de cada cliente, como si ya se hubiera relevado con la app y quedará aprobado. Si ese almacén ya tenía datos cargados, se van a reemplazar. ¿Continuar?');
+      if(!ok) return;
+      importarAgostoBtn.disabled = true;
+      showToast("Importando… esto puede tardar un momento");
+      const hechos = await importarAgosto((h,t,nombre)=>{ if(h % 5 === 0 || h===t) showToast(`Importando ${h}/${t}… (${nombre})`); });
+      showToast(`Listo: se importaron ${hechos} clientes`);
+      importarAgostoBtn.disabled = false;
+      render();
+    });
+  }
   $app.querySelectorAll("[data-rechazar]").forEach(el=>{
     el.addEventListener("click", async ()=>{
       STATE.relevamientos[el.dataset.rechazar].estadoVendedor = "rechazado";
