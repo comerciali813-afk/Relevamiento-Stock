@@ -247,6 +247,10 @@ const DB_LOCAL = {
   async uploadPhoto(almacenId, clienteId, slot, dataUrl){
     // En modo prueba no hay Drive: la foto se guarda tal cual (base64) en el registro.
     return { ok:true, url: dataUrl };
+  },
+  async getVentas(){
+    // En modo prueba no hay hoja de Ventas real: no hay datos de venta hasta conectar el backend.
+    return { ventas: {} };
   }
 };
 
@@ -282,7 +286,18 @@ const DB_REMOTE = {
   },
   async saveClientes(clientes){ return this._post({ action:"saveClientes", clientes }); },
   async saveRelevamiento(almacenId, clienteId, data){ return this._post({ action:"saveRelevamiento", almacenId, clienteId, data }); },
-  async uploadPhoto(almacenId, clienteId, slot, dataUrl){ return this._post({ action:"uploadPhoto", almacenId, clienteId, slot, dataUrl }); }
+  async uploadPhoto(almacenId, clienteId, slot, dataUrl){ return this._post({ action:"uploadPhoto", almacenId, clienteId, slot, dataUrl }); },
+  async getVentas(){
+    let res;
+    try{ res = await fetch(API_URL + "?action=getVentas"); }
+    catch(e){ throw new Error("No se pudo conectar al backend (red/CORS) al pedir ventas: "+e.message); }
+    if(!res.ok) throw new Error("El backend respondió con error HTTP "+res.status+" al pedir ventas");
+    let data;
+    try{ data = await res.json(); }
+    catch(e){ throw new Error("La respuesta del backend no es JSON válido al pedir ventas"); }
+    if(data && data.error) throw new Error("El backend devolvió un error: "+data.error);
+    return data;
+  }
 };
 
 const DB = USE_BACKEND ? DB_REMOTE : DB_LOCAL;
@@ -300,6 +315,8 @@ let STATE = {
   loginCiudadElegida: null,
   ultimoEnvio: null,
   dashboardFiltroCiudad: "TODAS",
+  ventasCache: null,
+  ventasError: null,
   firmaAcuerdo: false,
   firmaMetodo: "dibujo",
   firmaNombreTexto: "",
@@ -481,8 +498,8 @@ function render(){
   else if(STATE.screen==="firma") html = screenFirma();
   else if(STATE.screen==="vendedorLista") html = screenVendedorLista();
   else if(STATE.screen==="vendedorDetalle") html = screenVendedorDetalle();
-  else if(STATE.screen==="ventasPromedio") html = screenVentasPromedio();
   else if(STATE.screen==="dashboard") html = screenDashboard();
+  else if(STATE.screen==="ventasDashboard") html = screenVentasDashboard();
   else if(STATE.screen==="envioExitoso") html = screenEnvioExitoso();
   else if(STATE.screen==="exportar") html = screenExportar();
 
@@ -502,9 +519,11 @@ function header(title, sub, showBack, backTo){
 function tabbar(active){
   if(!STATE.role) return "";
   let base;
-  if(STATE.role==="relevador") base = [["clientes","🏬","Clientes"]];
+  if(STATE.role==="comercial") base = [];
+  else if(STATE.role==="relevador") base = [["clientes","🏬","Clientes"]];
   else if(STATE.role==="administrador") base = [["vendedorLista","🛠️","Panel"]];
   else base = [["vendedorLista","✅","Aprobaciones"]];
+  if(puedeVerVentas()) base.push(["ventasDashboard","💰","Ventas"]);
   base.push(["dashboard","📊","Dashboard"], ["exportar","📤","Exportar"], ["login","↺","Salir"]);
   return `<nav class="tabbar">${base.map(([k,ic,lb])=>`<button data-nav="${k}" class="${active===k?'active':''}"><span class="ic">${ic}</span>${lb}</button>`).join("")}</nav>`;
 }
@@ -541,6 +560,7 @@ function screenLogin(){
         <button class="btn btn-primary" data-role="relevador">Ingresar como relevador</button>
         <button class="btn btn-outline" data-role="vendedor">Ingresar como vendedor</button>
       </div>
+      <button class="btn btn-ghost" data-role="comercial" style="margin-top:10px;">💰 Ingresar como comercial</button>
     </div>` : ``}
   </main>`;
 }
@@ -621,6 +641,7 @@ function clienteBloqueado(cliente){
   return (cliente.almacenes||[]).some(a=>almacenBloqueado(STATE.relevamientos[a.id]));
 }
 function esAdministrador(){ return STATE.role==="administrador"; }
+function puedeVerVentas(){ return ["vendedor","administrador","comercial"].includes(STATE.role); }
 
 function abrirAlmacen(almacenId){
   STATE.almacenId = almacenId;
@@ -863,7 +884,7 @@ function screenVendedorDetalle(){
   return `
   ${header(c.nombre,c.ciudad,true,"vendedorLista")}
   <main>
-    ${esAdministrador()?`<button class="btn btn-outline" data-nav="ventasPromedio" style="margin-bottom:16px;">📈 Cargar venta promedio mensual</button>`:""}
+    ${esAdministrador()?`<div class="mini-note">📈 Los datos de venta y días de stock son confidenciales: se cargan y consultan directo en la hoja de Google Sheets ("Ventas" y "Dashboard"), no en la app.</div>`:""}
     ${almacenes.map(a=>{
       const rel = STATE.relevamientos[a.id] || emptyRelevamiento(a.id);
       const estKey = rel.estadoVendedor==="pendiente"?"pendiente":rel.estadoVendedor==="aprobado"?"aprobado":rel.estadoVendedor==="rechazado"?"rechazado":"en_progreso";
@@ -894,17 +915,108 @@ function screenVendedorDetalle(){
   ${tabbar('vendedorLista')}`;
 }
 
-function screenVentasPromedio(){
-  if(!esAdministrador()){ STATE.screen="vendedorDetalle"; return screenVendedorDetalle(); }
-  const c = getCliente(STATE.clienteId);
-  c.ventasProm = c.ventasProm || {};
+async function abrirVentasDashboard(){
+  STATE.screen = "ventasDashboard";
+  render();
+  if(!puedeVerVentas()) return;
+  if(STATE.ventasCache) return; // ya está cargado, no lo repetimos cada vez que se entra
+  STATE.ventasError = null;
+  try{
+    const data = await DB.getVentas();
+    STATE.ventasCache = data.ventas || {};
+  }catch(e){
+    STATE.ventasError = e.message || String(e);
+  }
+  render();
+}
+
+function nivelRiesgoVentas(dias){
+  if(dias==null) return ["sin dato","badge-done"];
+  if(dias < 7) return ["riesgo de quiebre","badge-red"];
+  if(dias < 15) return ["stock bajo","badge-amber"];
+  return ["cobertura ok","badge-green"];
+}
+
+function screenVentasDashboard(){
+  if(!puedeVerVentas()){
+    return `${header("Acceso restringido","",true,"clientes")}<main><div class="mini-note">🔒 Esta sección es solo para vendedores, comerciales y administradores.</div></main>`;
+  }
+  const puedeFiltrar = STATE.ciudad===NACIONAL;
+  const filtro = puedeFiltrar ? STATE.dashboardFiltroCiudad : STATE.ciudad;
+  const clientes = filtro==="TODAS" ? clientesDeMiCiudad() : STATE.clientes.filter(c=>c.ciudad===filtro);
+
+  const header1 = `
+  <header class="top">
+    <div class="mark">RS</div>
+    <div class="titles">
+      <h1>💰 Ventas y días de stock</h1>
+      <div class="sub">${filtro==="TODAS"?nombreCiudad(STATE.ciudad):nombreCiudad(filtro)} · confidencial</div>
+      <span class="dash-month">📅 ${mesActualLabel()}</span>
+    </div>
+  </header>`;
+
+  if(STATE.ventasCache===null && !STATE.ventasError){
+    return `${header1}<main><div class="empty"><div class="big">⏳</div>Cargando datos de venta…</div></main>${tabbar('ventas')}`;
+  }
+  if(STATE.ventasError){
+    return `${header1}<main>
+      <div class="mini-note" style="background:#f5e3e0;border-color:#dba79f;color:#7a2e2e;">❌ No se pudieron cargar las ventas: ${STATE.ventasError}</div>
+      <button class="btn btn-primary" id="reintentarVentas">Reintentar</button>
+    </main>${tabbar('ventas')}`;
+  }
+
+  const ventas = STATE.ventasCache || {};
+  const filas = clientes.map(c=>{
+    const stock = Object.values(stockPorSkuCliente(c)).reduce((a,b)=>a+b,0);
+    const venta = ventas[c.id];
+    const dias = (venta && venta.valor) ? Math.round((stock/(venta.valor/30))*10)/10 : null;
+    return { nombre:c.nombre, ciudad:c.ciudad, vendedor:c.vendedor, stock, ventaValor: venta?venta.valor:null, ventaMes: venta?venta.mesLabel:null, dias };
+  });
+  const conDatos = filas.filter(f=>f.dias!=null).sort((a,b)=>a.dias-b.dias);
+  const sinDatos = filas.filter(f=>f.dias==null && f.stock>0);
+
+  const porCiudad = {};
+  conDatos.forEach(f=>{ porCiudad[f.ciudad] = porCiudad[f.ciudad]||[]; porCiudad[f.ciudad].push(f.dias); });
+
   return `
-  ${header("Venta promedio mensual",c.nombre,true,"vendedorDetalle")}
+  ${header1}
   <main>
-    <div class="mini-note">Ingresá cuántas unidades vende este cliente por mes en promedio, por producto. Con esto la app calcula los <b>días de stock</b> en el Dashboard (stock actual ÷ venta diaria promedio).</div>
-    ${categoriasDesplegables(SKU_CATALOG,"ventasProm","venta",c)}
-    <button class="btn btn-primary" id="guardarVentas">Guardar venta promedio</button>
-  </main>`;
+    ${puedeFiltrar ? `
+    <div class="city-filter-row">
+      <div class="city-filter-chip ${filtro==='TODAS'?'active':''}" data-filtro-ciudad="TODAS">Todas</div>
+      ${CIUDADES.map(c=>`<div class="city-filter-chip ${filtro===c?'active':''}" data-filtro-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
+    </div>` : ``}
+    <div class="mini-note">🔒 Esta información es confidencial: solo la ven vendedores, comerciales y administradores. Las ventas se cargan directo en Google Sheets (hoja "Ventas"), nunca desde esta app.</div>
+
+    ${Object.keys(porCiudad).length>1 ? `
+    <h2 class="section-title">Días de stock promedio por regional</h2>
+    <div class="card">
+      ${Object.entries(porCiudad).map(([ciudad,arr])=>{
+        const prom = Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10;
+        const [lbl,cls] = nivelRiesgoVentas(prom);
+        return `<div class="risk-item"><div><div class="name">${NOMBRES_CIUDAD[ciudad]||ciudad}</div><div class="sub">${arr.length} distribuidor(es) con dato</div></div><span class="badge ${cls}">${prom} días</span></div>`;
+      }).join("")}
+    </div>` : ``}
+
+    <h2 class="section-title">Días de stock por distribuidor</h2>
+    <div class="card">
+      ${conDatos.length===0?`<div class="hint">Todavía no hay ventas cargadas en Google Sheets para este filtro.</div>`:
+      conDatos.map(f=>{
+        const [lbl,cls] = nivelRiesgoVentas(f.dias);
+        return `<div class="risk-item">
+          <div><div class="name">${f.nombre}${filtro==="TODAS"?` <span class="sub">(${f.ciudad})</span>`:""}</div><div class="sub">Stock ${f.stock} u. · Venta ${f.ventaValor} u. (${f.ventaMes})</div></div>
+          <span class="badge ${cls}">${f.dias} días</span>
+        </div>`;
+      }).join("")}
+    </div>
+
+    ${sinDatos.length>0?`
+    <h2 class="section-title">Con stock pero sin venta cargada todavía</h2>
+    <div class="card">
+      ${sinDatos.map(f=>`<div class="risk-item"><div><div class="name">${f.nombre}${filtro==="TODAS"?` <span class="sub">(${f.ciudad})</span>`:""}</div><div class="sub">Stock ${f.stock} u.</div></div><span class="badge badge-done">sin venta</span></div>`).join("")}
+    </div>`:``}
+  </main>
+  ${tabbar('ventas')}`;
 }
 
 function screenDashboard(){
@@ -914,11 +1026,8 @@ function screenDashboard(){
   const ciudadParaHistorico = filtro==="TODAS" ? STATE.ciudad : filtro;
 
   let totalStockCiudad = 0;
-  let sumaDias=0, countDias=0;
   const porCategoria = {};
   const porCiudad = {};
-  const riesgos = []; // {cliente, sku, dias}
-  const clientesCobertura = []; // {cliente, dias}
   const stockPorCliente = []; // {nombre, ciudad, stock}
   let pendientesAprobacion = 0;
   let relevadosEsteMes = 0;
@@ -926,27 +1035,15 @@ function screenDashboard(){
 
   clientes.forEach(c=>{
     const stock = stockPorSkuCliente(c);
-    let stockCliente=0, ventaMensualCliente=0, diasClienteAcc=[];
+    let stockCliente=0;
     Object.entries(stock).forEach(([skuId,qty])=>{
       totalStockCiudad += qty;
       stockCliente += qty;
       porCiudad[c.ciudad] = (porCiudad[c.ciudad]||0)+qty;
       const sku = SKU_CATALOG.find(s=>s.id===skuId);
       if(sku) porCategoria[sku.categoria] = (porCategoria[sku.categoria]||0)+qty;
-      const venta = (c.ventasProm||{})[skuId];
-      const dias = diasStockSku(qty, venta);
-      if(dias!=null){
-        sumaDias += dias; countDias++;
-        diasClienteAcc.push(dias);
-        if(sku) riesgos.push({cliente:c.nombre+(filtro==="TODAS"?" ("+c.ciudad+")":""), sku:sku.marca+" "+sku.formatoMostrado, dias});
-      }
-      if(venta) ventaMensualCliente += Number(venta);
     });
     if(stockCliente>0) stockPorCliente.push({ nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente });
-    if(diasClienteAcc.length>0){
-      const prom = diasClienteAcc.reduce((a,b)=>a+b,0)/diasClienteAcc.length;
-      clientesCobertura.push({cliente:c.nombre+(filtro==="TODAS"?" ("+c.ciudad+")":""), dias:Math.round(prom*10)/10});
-    }
     (c.almacenes||[]).forEach(a=>{
       const rel = STATE.relevamientos[a.id];
       if(!rel) return;
@@ -955,10 +1052,7 @@ function screenDashboard(){
     });
   });
 
-  riesgos.sort((a,b)=>a.dias-b.dias);
-  clientesCobertura.sort((a,b)=>a.dias-b.dias);
   stockPorCliente.sort((a,b)=>b.stock-a.stock);
-  const coberturaPromedio = countDias>0 ? Math.round((sumaDias/countDias)*10)/10 : null;
   const maxCat = Math.max(1,...Object.values(porCategoria));
   const maxCiudad = Math.max(1,...Object.values(porCiudad));
 
@@ -978,9 +1072,10 @@ function screenDashboard(){
       ${CIUDADES.map(c=>`<div class="city-filter-chip ${filtro===c?'active':''}" data-filtro-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
     </div>` : ``}
 
+    <div class="mini-note">🔒 Los días de stock y el detalle de ventas son confidenciales: se calculan y consultan solo en la hoja "Dashboard" de Google Sheets, accesible únicamente para vendedores y comerciales. Acá solo se muestra el stock relevado.</div>
+
     <div class="card">
       <div class="metric"><span class="lbl">Total unidades en stock</span><span class="val">${totalStockCiudad}</span></div>
-      <div class="metric"><span class="lbl">Cobertura promedio de stock</span><span class="val">${coberturaPromedio!=null? coberturaPromedio+" días":"sin datos de venta"}</span></div>
       <div class="metric"><span class="lbl">Almacenes relevados en los últimos 30 días</span><span class="val">${relevadosEsteMes}</span></div>
       <div class="metric"><span class="lbl">Pendientes de aprobación</span><span class="val">${pendientesAprobacion}</span></div>
     </div>
@@ -1036,24 +1131,6 @@ function screenDashboard(){
         </div>`;
       }).join("")}
     </div>
-
-    <h2 class="section-title">Clientes con menor cobertura (riesgo de quiebre)</h2>
-    <div class="card">
-      ${clientesCobertura.length===0?`<div class="hint">Cargá la venta promedio mensual de cada cliente (desde Aprobaciones → cliente → "Cargar venta promedio mensual") para ver esta alerta.</div>`:
-      clientesCobertura.slice(0,6).map(r=>{
-        const [lbl,cls]=nivelRiesgo(r.dias);
-        return `<div class="risk-item"><div><div class="name">${r.cliente}</div><div class="sub">cobertura promedio</div></div><span class="badge ${cls}">${r.dias} días</span></div>`;
-      }).join("")}
-    </div>
-
-    <h2 class="section-title">Productos en riesgo de quiebre por cliente</h2>
-    <div class="card">
-      ${riesgos.length===0?`<div class="hint">Sin datos suficientes todavía.</div>`:
-      riesgos.slice(0,8).map(r=>{
-        const [lbl,cls]=nivelRiesgo(r.dias);
-        return `<div class="risk-item"><div><div class="name">${r.sku}</div><div class="sub">${r.cliente}</div></div><span class="badge ${cls}">${r.dias} días</span></div>`;
-      }).join("")}
-    </div>
   </main>
   ${tabbar('dashboard')}`;
 }
@@ -1064,7 +1141,7 @@ function screenExportar(){
   ${header("Exportar a Excel",nombreCiudad(STATE.ciudad),false)}
   <main>
     <div class="mini-note">
-      El Excel sale con el mismo formato que tu planilla base (N°, Marca, Categoría, Formato, Observaciones, LINEA 3, y una columna por cliente agrupada por vendedor)${esNacional?", con una hoja por ciudad":""}. Incluye además una hoja "Detalle" (GPS, evidencia, aprobación) y una hoja "Dashboard" con días de stock.
+      El Excel sale con el mismo formato que tu planilla base (N°, Marca, Categoría, Formato, Observaciones, LINEA 3, y una columna por cliente agrupada por vendedor)${esNacional?", con una hoja por ciudad":""}. Incluye además una hoja "Detalle" (GPS, evidencia, aprobación) y una hoja "Resumen stock" (totales por cliente). Los datos de venta y días de stock no salen en este Excel: son confidenciales y solo están en la hoja "Dashboard" de Google Sheets.
     </div>
     <button class="btn btn-primary" id="exportarBtn">Descargar Excel${esNacional?" (todas las ciudades)":" de "+STATE.ciudad}</button>
     <div class="hint" style="margin-top:10px;text-align:center;">Las fotos y la firma quedan dentro de la app (se eliminan a los ${DIAS_RETENCION_FOTOS} días); el Excel indica cuántas fotos y si hay firma.</div>
@@ -1077,9 +1154,10 @@ function screenExportar(){
 --------------------------------------------------------------- */
 function bindEvents(){
   $app.querySelectorAll("[data-nav]").forEach(el=>{
-    el.addEventListener("click",()=>{
-      if(el.dataset.nav==="login"){ STATE = {...STATE, screen:"login", ciudad:null, role:null, clienteId:null, almacenId:null, loginCiudadElegida:null}; }
-      else STATE.screen = el.dataset.nav;
+    el.addEventListener("click", async ()=>{
+      if(el.dataset.nav==="login"){ STATE = {...STATE, screen:"login", ciudad:null, role:null, clienteId:null, almacenId:null, loginCiudadElegida:null, ventasCache:null, ventasError:null}; render(); return; }
+      if(el.dataset.nav==="ventasDashboard"){ await abrirVentasDashboard(); return; }
+      STATE.screen = el.dataset.nav;
       render();
     });
   });
@@ -1099,6 +1177,7 @@ function bindEvents(){
       STATE.userName = name;
       STATE.ciudad = ciudad;
       STATE.role = el.dataset.role;
+      if(el.dataset.role==="comercial"){ await abrirVentasDashboard(); return; }
       STATE.screen = el.dataset.role==="relevador" ? "clientes" : "vendedorLista";
       render();
     });
@@ -1188,22 +1267,6 @@ function bindEvents(){
   const volverFotosBtn = document.getElementById("volverFotosBtn");
   if(volverFotosBtn){
     volverFotosBtn.addEventListener("click", ()=>{ STATE.screen="ubicacionFotos"; render(); });
-  }
-
-  const guardarVentasBtn = document.getElementById("guardarVentas");
-  if(guardarVentasBtn){
-    guardarVentasBtn.addEventListener("click", async ()=>{
-      const c = getCliente(STATE.clienteId);
-      c.ventasProm = c.ventasProm || {};
-      $app.querySelectorAll("[data-venta]").forEach(inp=>{
-        const v = inp.value;
-        if(v!=="" && Number(v)>=0) c.ventasProm[inp.dataset.venta] = Number(v);
-        else delete c.ventasProm[inp.dataset.venta];
-      });
-      await saveClientes();
-      showToast("Venta promedio guardada");
-      STATE.screen="vendedorDetalle"; render();
-    });
   }
 
   const gpsBtn = document.getElementById("capturarGps");
@@ -1299,6 +1362,13 @@ function bindEvents(){
   $app.querySelectorAll("[data-editar-almacen]").forEach(el=>{
     el.addEventListener("click", ()=>{ abrirAlmacen(el.dataset.editarAlmacen); });
   });
+  const reintentarVentasBtn = document.getElementById("reintentarVentas");
+  if(reintentarVentasBtn){
+    reintentarVentasBtn.addEventListener("click", async ()=>{
+      STATE.ventasCache = null; STATE.ventasError = null;
+      await abrirVentasDashboard();
+    });
+  }
   const importarAgostoBtn = document.getElementById("importarAgostoBtn");
   if(importarAgostoBtn){
     importarAgostoBtn.addEventListener("click", async ()=>{
@@ -1501,18 +1571,13 @@ function exportarExcel(){
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detalle), "Detalle");
 
-  const dash = [["Ciudad","Cliente","Vendedor","Stock total (u.)","Venta prom. mensual (u.)","Días de stock promedio","Nivel"]];
+  const dash = [["Ciudad","Cliente","Vendedor","Stock total (u.)"]];
   clientesAExportar.forEach(c=>{
     const stock = stockPorSkuCliente(c);
     const stockTotal = Object.values(stock).reduce((a,b)=>a+b,0);
-    const ventas = c.ventasProm||{};
-    const ventaTotal = Object.values(ventas).reduce((a,b)=>a+(Number(b)||0),0);
-    const diasArr = Object.entries(stock).map(([sku,q])=>diasStockSku(q, ventas[sku])).filter(d=>d!=null);
-    const diasProm = diasArr.length? Math.round((diasArr.reduce((a,b)=>a+b,0)/diasArr.length)*10)/10 : "";
-    const [nivel] = diasProm!==""? nivelRiesgo(diasProm) : ["sin dato"];
-    dash.push([c.ciudad, c.nombre, c.vendedor||"", stockTotal, ventaTotal||"", diasProm, nivel]);
+    dash.push([c.ciudad, c.nombre, c.vendedor||"", stockTotal]);
   });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dash), "Dashboard");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dash), "Resumen stock");
 
   const nombreArchivo = "Relevamiento_"+(esNacional?"TODAS_LAS_CIUDADES":STATE.ciudad)+"_"+new Date().toISOString().slice(0,10)+".xlsx";
   XLSX.writeFile(wb, nombreArchivo);
