@@ -370,6 +370,17 @@ let STATE = {
 
 function uid(p){ return p+"_"+Date.now()+"_"+Math.floor(Math.random()*9999); }
 
+/* Formatea números con separador de miles (punto) y decimales (coma),
+   como se usa en Bolivia. Ej: 22661 -> "22.661", 45.5 -> "45,5". */
+function fmt(n){
+  if(n===null || n===undefined || n==="" || isNaN(n)) return n===0?"0":(n||"");
+  const num = Number(n);
+  const esEntero = Number.isInteger(num);
+  const partes = (esEntero ? num.toString() : num.toFixed(1)).split(".");
+  partes[0] = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return partes.join(",");
+}
+
 async function loadAll(){
   const data = await DB.getAll();
   STATE.clientes = data.clientes || [];
@@ -721,7 +732,7 @@ function screenAlmacenBloqueado(){
       <div style="font-size:34px;margin-bottom:8px;">🔒</div>
       <div style="font-weight:700;margin-bottom:6px;">Este almacén ya fue relevado y enviado</div>
       <span class="badge ${cls}" style="margin-bottom:10px;display:inline-block;">${label}</span>
-      <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
+      <div class="hint">Total unidades: <b>${fmt(totalUnidades(rel))}</b></div>
       <div class="hint">Relevado por: ${rel.relevadorNombre||"—"}${rel.fechaConteo?" · "+new Date(rel.fechaConteo).toLocaleDateString():""}</div>
       <div class="hint" style="margin-top:10px;">Los datos ya no se pueden modificar. Si hace falta corregir algo, pedile a un Administrador que entre con su usuario.</div>
     </div>
@@ -799,7 +810,7 @@ function screenConteo(){
   return `
   ${header("Conteo de stock",a.nombre,true,"almacenes")}
   <main>
-    <div class="total-pill"><span>Total unidades contadas</span><span>${totalUnidades(rel)}</span></div>
+    <div class="total-pill"><span>Total unidades contadas</span><span>${fmt(totalUnidades(rel))}</span></div>
     ${categoriasDesplegables(SKU_CATALOG,"conteos","sku",rel)}
     <div class="row-btns">
       <button class="btn btn-primary" id="guardarConteo">Guardar conteo</button>
@@ -851,14 +862,14 @@ function screenResumenCliente(){
   ${header("Resumen del cliente",c.nombre,true,"almacenes")}
   <main>
     <div class="card">
-      <div class="total-pill"><span>Total unidades (todos los almacenes)</span><span>${totalGeneral}</span></div>
+      <div class="total-pill"><span>Total unidades (todos los almacenes)</span><span>${fmt(totalGeneral)}</span></div>
       <div class="hint">${almacenes.length} almacén(es) · ${conGps}/${almacenes.length} con ubicación · ${conFotos}/${almacenes.length} con fotos</div>
     </div>
     <h2 class="section-title">Detalle por almacén</h2>
     ${almacenes.map(a=>{
       const rel = STATE.relevamientos[a.id]||{};
       return `<div class="list-item" data-almacen-r="${a.id}">
-        <div><b>${a.nombre}</b><div class="meta">${totalUnidades(rel)} unidades</div></div>
+        <div><b>${a.nombre}</b><div class="meta">${fmt(totalUnidades(rel))} unidades</div></div>
         <span class="chev">›</span>
       </div>`;
     }).join("")}
@@ -966,7 +977,7 @@ function screenVendedorDetalle(){
         </div>
         <div class="hint">Relevado por: <b>${rel.relevadorNombre||"—"}</b>${rel.fechaConteo?" · "+new Date(rel.fechaConteo).toLocaleString():""}</div>
         <div class="hint">Finalizado: ${finalizado?"Sí ✔":"No, todavía en curso"}</div>
-        <div class="hint">Total unidades: <b>${totalUnidades(rel)}</b></div>
+        <div class="hint">Total unidades: <b>${fmt(totalUnidades(rel))}</b></div>
         <div class="hint">Ubicación: ${rel.gps?`lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)}`:"no capturada"}</div>
         <div class="hint">Fotos del almacén: ${rel.fotos.filter(Boolean).length}/2${rel.fotosEliminadas?" (vencidas y eliminadas)":""}</div>
         <div class="hint">Conformidad del cliente: ${rel.clienteAcuerdo===true?"Sí, firmó":rel.clienteAcuerdo===false?"No conforme":"pendiente"}${rel.firmaTipo?" · "+(rel.firmaTipo==="nombre"?"nombre escrito":"firma en pantalla"):""}</div>
@@ -1071,7 +1082,7 @@ function screenVentasDashboard(){
       ${Object.entries(porCiudad).map(([ciudad,arr])=>{
         const prom = Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10;
         const [lbl,cls] = nivelRiesgoVentas(prom);
-        return `<div class="risk-item"><div><div class="name">${NOMBRES_CIUDAD[ciudad]||ciudad}</div><div class="sub">${arr.length} línea(s) con dato</div></div><span class="badge ${cls}">${prom} días</span></div>`;
+        return `<div class="risk-item"><div><div class="name">${NOMBRES_CIUDAD[ciudad]||ciudad}</div><div class="sub">${arr.length} línea(s) con dato</div></div><span class="badge ${cls}">${fmt(prom)} días</span></div>`;
       }).join("")}
     </div>` : ``}
 
@@ -1081,8 +1092,8 @@ function screenVentasDashboard(){
       filas.map(f=>{
         const [lbl,cls] = nivelRiesgoVentas(f.dias);
         return `<div class="risk-item">
-          <div><div class="name">${f.nombre}${filtro==="TODAS"?` <span class="sub">(${f.ciudad})</span>`:""}</div><div class="sub">${f.linea}</div><div class="sub">Stock ${f.stock} u. · Venta ${f.ventaUnidades} u./mes</div></div>
-          <span class="badge ${cls}">${f.dias} días</span>
+          <div><div class="name">${f.nombre}${filtro==="TODAS"?` <span class="sub">(${f.ciudad})</span>`:""}</div><div class="sub">${f.linea}</div><div class="sub">Stock ${fmt(f.stock)} u. · Venta ${fmt(f.ventaUnidades)} u./mes</div></div>
+          <span class="badge ${cls}">${fmt(f.dias)} días</span>
         </div>`;
       }).join("")}
     </div>
@@ -1174,12 +1185,12 @@ function screenDashboard(){
 
     ${esActual?`
     <div class="card">
-      <div class="metric"><span class="lbl">Total unidades en stock</span><span class="val">${totalStockCiudad}</span></div>
+      <div class="metric"><span class="lbl">Total unidades en stock</span><span class="val">${fmt(totalStockCiudad)}</span></div>
       <div class="metric"><span class="lbl">Almacenes relevados en los últimos 30 días</span><span class="val">${relevadosEsteMes}</span></div>
       <div class="metric"><span class="lbl">Pendientes de aprobación</span><span class="val">${pendientesAprobacion}</span></div>
     </div>` : `
     <div class="card">
-      <div class="metric"><span class="lbl">Total unidades en stock (${filtroMes})</span><span class="val">${totalStockCiudad}</span></div>
+      <div class="metric"><span class="lbl">Total unidades en stock (${filtroMes})</span><span class="val">${fmt(totalStockCiudad)}</span></div>
     </div>`}
 
     ${esActual ? (()=>{
@@ -1193,7 +1204,7 @@ function screenDashboard(){
       ${esCombinado?`<div class="hint" style="margin-bottom:8px;">Dato histórico combinado de Oruro + Potosí + Sucre + Tarija: la planilla original no separaba estas 4 ciudades mes a mes.</div>`:""}
       ${HISTORICO_MENSUAL.meses.map((m,i)=>`
         <div class="bar-row">
-          <div class="top"><span>${m}${i===HISTORICO_MENSUAL.meses.length-1?" (agosto)":""}</span><span>${hist[i]} u.</span></div>
+          <div class="top"><span>${m}${i===HISTORICO_MENSUAL.meses.length-1?" (agosto)":""}</span><span>${fmt(hist[i])} u.</span></div>
           <div class="bar-track"><div class="bar-fill c${i%7}" style="width:${(hist[i]/max*100).toFixed(0)}%"></div></div>
         </div>`).join("")}
       <div class="hint" style="margin-top:6px;">Estos totales vienen de la planilla Trade Stock de referencia. El "Total unidades en stock" de arriba es el dato en vivo cargado en la app.</div>
@@ -1206,7 +1217,7 @@ function screenDashboard(){
       ${Object.keys(porCiudad).length===0?`<div class="hint">Todavía no hay conteos cargados.</div>`:
       CIUDADES.filter(c=>porCiudad[c]).map((c,i)=>`
         <div class="bar-row">
-          <div class="top"><span>${NOMBRES_CIUDAD[c]||c}</span><span>${porCiudad[c]} u.</span></div>
+          <div class="top"><span>${NOMBRES_CIUDAD[c]||c}</span><span>${fmt(porCiudad[c])} u.</span></div>
           <div class="bar-track"><div class="bar-fill c${i%7}" style="width:${(porCiudad[c]/maxCiudad*100).toFixed(0)}%"></div></div>
         </div>`).join("")}
     </div>` : ``}
@@ -1216,7 +1227,7 @@ function screenDashboard(){
       ${Object.keys(porCategoria).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
       Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).map(([cat,qty],i)=>`
         <div class="bar-row">
-          <div class="top"><span>${cat}</span><span>${qty} u.</span></div>
+          <div class="top"><span>${cat}</span><span>${fmt(qty)} u.</span></div>
           <div class="bar-track"><div class="bar-fill c${i%7}" style="width:${(qty/maxCat*100).toFixed(0)}%"></div></div>
         </div>`).join("")}
     </div>
@@ -1229,8 +1240,8 @@ function screenDashboard(){
         const base = filtroCiudad==="TODAS" ? (porCiudad[r.ciudad]||1) : totalStockCiudad;
         const pct = base>0 ? Math.round((r.stock/base)*1000)/10 : 0;
         return `<div class="risk-item">
-          <div><div class="name">${i+1}. ${r.nombre}${filtroCiudad==="TODAS"?` <span class="sub">(${r.ciudad})</span>`:""}</div><div class="sub">${r.stock} unidades</div></div>
-          <span class="badge badge-approved">${pct}%</span>
+          <div><div class="name">${i+1}. ${r.nombre}${filtroCiudad==="TODAS"?` <span class="sub">(${r.ciudad})</span>`:""}</div><div class="sub">${fmt(r.stock)} unidades</div></div>
+          <span class="badge badge-approved">${fmt(pct)}%</span>
         </div>`;
       }).join("")}
     </div>`:``}
