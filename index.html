@@ -178,27 +178,28 @@ function histSkuParaCiudad(ciudad){
 }
 
 const MESES_DASHBOARD = ["MAY","JUN","JUL","ACTUAL"];
-function categoriasDisponibles(){
-  return [...new Set(SKU_CATALOG.map(s=>s.categoria))].sort();
+function lineasDisponiblesDashboard(){
+  return [...new Set(Object.values(SKU_A_LINEA).filter(Boolean))].sort();
 }
-/* Stock por categoría para un mes histórico (MAY/JUN/JUL), usando HIST_SKU_MENSUAL.
-   Para las 4 ciudades chicas usa el dato combinado de "SUR" (la planilla no las separaba). */
-function stockPorCategoriaHistorico(ciudad, mes){
+/* Stock por línea (LINEA2) para un mes histórico (MAY/JUN/JUL), usando HIST_SKU_MENSUAL.
+   Para las 4 ciudades chicas usa el dato combinado de "SUR" (la planilla no las separaba).
+   Usa la misma línea que Ventas, para que ambas pantallas sean homogéneas. */
+function stockPorLineaHistorico(ciudad, mes){
   const claveCiudad = ["ORURO","POTOSI","SUCRE","TARIJA"].includes(ciudad) ? "SUR" : ciudad;
   const ciudadesASumar = ciudad===NACIONAL ? ["CBBA","LPZ","SCZ","SUR"] : [claveCiudad];
-  const porCat = {};
+  const porLinea = {};
   ciudadesASumar.forEach(cv=>{
     const datos = HIST_SKU_MENSUAL[cv];
     if(!datos) return;
     Object.entries(datos).forEach(([n, meses])=>{
       const val = meses[mes];
       if(!val) return;
-      const sku = SKU_CATALOG.find(s=>String(s.n)===n);
-      if(!sku) return;
-      porCat[sku.categoria] = (porCat[sku.categoria]||0) + val;
+      const linea = SKU_A_LINEA["sku_"+n];
+      if(!linea) return;
+      porLinea[linea] = (porLinea[linea]||0) + val;
     });
   });
-  return porCat;
+  return porLinea;
 }
 
 /* Mapeo de cada SKU a su línea de venta (LINEA2), y unidades por caja
@@ -1114,10 +1115,18 @@ function screenVentasDashboard(){
   ${header1}
   <main>
     ${puedeFiltrar ? `
+    <h2 class="section-title">Ciudad</h2>
     <div class="city-filter-row">
       <div class="city-filter-chip ${filtro==='TODAS'?'active':''}" data-filtro-ciudad="TODAS">Todas</div>
       ${CIUDADES.map(c=>`<div class="city-filter-chip ${filtro===c?'active':''}" data-filtro-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
     </div>` : ``}
+
+    <h2 class="section-title">Línea</h2>
+    <select id="ventasFiltroLineaSelect" style="margin-bottom:16px;">
+      <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Todas las líneas (resumen)</option>
+      ${lineasDisponibles.map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
+    </select>
+
     <div class="mini-note">🔒 Esta información es confidencial: solo la ven vendedores, comerciales y administradores. Las ventas se cargan pegando el reporte mensual directo en Google Sheets (hoja "Ventas"), nunca desde esta app. El cruce es por línea de producto${mesVentas?" · venta cargada: "+mesVentas:""}.</div>
 
     ${Object.keys(porCiudad).length>1 ? `
@@ -1141,14 +1150,10 @@ function screenVentasDashboard(){
       }).join("")}
     </div>
 
-    <h2 class="section-title">Detalle por cliente — elegí una línea</h2>
-    <select id="ventasFiltroLineaSelect" style="margin-bottom:12px;">
-      <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Elegí una línea…</option>
-      ${lineasDisponibles.map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
-    </select>
+    ${filtroLinea!=="TODAS"?`
+    <h2 class="section-title">Detalle por cliente — ${filtroLinea}</h2>
     <div class="card">
-      ${filtroLinea==="TODAS"?`<div class="hint">Elegí una línea arriba para ver el detalle por cliente (para no mostrar todo junto).</div>`:
-      filasDetalle.length===0?`<div class="hint">Sin cruce todavía para esta línea con este filtro.</div>`:
+      ${filasDetalle.length===0?`<div class="hint">Sin cruce todavía para esta línea con este filtro.</div>`:
       filasDetalle.map(f=>{
         const [lbl,cls] = nivelRiesgoVentas(f.dias);
         return `<div class="risk-item">
@@ -1156,7 +1161,7 @@ function screenVentasDashboard(){
           <span class="badge ${cls}">${fmt(f.dias)} días</span>
         </div>`;
       }).join("")}
-    </div>
+    </div>` : ``}
     ${huboStockSinVenta?`<div class="hint" style="text-align:center;">Algunas líneas con stock relevado todavía no tienen venta cargada para este mes — no se les calculó días de stock.</div>`:``}
   </main>
   ${tabbar('ventas')}`;
@@ -1167,11 +1172,11 @@ function screenDashboard(){
   const filtroCiudad = puedeFiltrarCiudad ? STATE.dashboardFiltroCiudad : STATE.ciudad;
   const ciudadParaHistorico = filtroCiudad==="TODAS" ? STATE.ciudad : filtroCiudad;
   const filtroMes = STATE.dashboardFiltroMes || "ACTUAL";
-  const filtroCategoria = STATE.dashboardFiltroCategoria || "TODAS";
+  const filtroLinea = STATE.dashboardFiltroCategoria || "TODAS"; // nombre de STATE sin cambiar para no romper nada; ahora guarda una línea
   const esActual = filtroMes==="ACTUAL";
 
   let totalStockCiudad = 0;
-  let porCategoria = {};
+  let porLinea = {};
   const porCiudad = {};
   const stockPorCliente = []; // {nombre, ciudad, stock}
   let pendientesAprobacion = 0;
@@ -1184,12 +1189,12 @@ function screenDashboard(){
       const stock = stockPorSkuCliente(c);
       let stockCliente=0;
       Object.entries(stock).forEach(([skuId,qty])=>{
-        const sku = SKU_CATALOG.find(s=>s.id===skuId);
-        if(filtroCategoria!=="TODAS" && (!sku || sku.categoria!==filtroCategoria)) return;
+        const linea = SKU_A_LINEA[skuId] || "Sin línea asignada";
+        if(filtroLinea!=="TODAS" && linea!==filtroLinea) return;
         totalStockCiudad += qty;
         stockCliente += qty;
         porCiudad[c.ciudad] = (porCiudad[c.ciudad]||0)+qty;
-        if(sku) porCategoria[sku.categoria] = (porCategoria[sku.categoria]||0)+qty;
+        porLinea[linea] = (porLinea[linea]||0)+qty;
       });
       if(stockCliente>0) stockPorCliente.push({ nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente });
       (c.almacenes||[]).forEach(a=>{
@@ -1200,16 +1205,16 @@ function screenDashboard(){
       });
     });
   } else {
-    // mes histórico: solo tenemos totales por categoría (de la planilla Trade Stock), sin detalle por cliente
-    porCategoria = stockPorCategoriaHistorico(filtroCiudad==="TODAS"?ciudadParaHistorico:filtroCiudad, filtroMes);
-    if(filtroCategoria!=="TODAS"){
-      porCategoria = Object.fromEntries(Object.entries(porCategoria).filter(([cat])=>cat===filtroCategoria));
+    // mes histórico: solo tenemos totales por línea (de la planilla Trade Stock), sin detalle por cliente
+    porLinea = stockPorLineaHistorico(filtroCiudad==="TODAS"?ciudadParaHistorico:filtroCiudad, filtroMes);
+    if(filtroLinea!=="TODAS"){
+      porLinea = Object.fromEntries(Object.entries(porLinea).filter(([l])=>l===filtroLinea));
     }
-    totalStockCiudad = Object.values(porCategoria).reduce((a,b)=>a+b,0);
+    totalStockCiudad = Object.values(porLinea).reduce((a,b)=>a+b,0);
   }
 
   stockPorCliente.sort((a,b)=>b.stock-a.stock);
-  const maxCat = Math.max(1,...Object.values(porCategoria));
+  const maxCat = Math.max(1,...Object.values(porLinea));
   const maxCiudad = Math.max(1,...Object.values(porCiudad));
 
   return `
@@ -1234,14 +1239,14 @@ function screenDashboard(){
       ${MESES_DASHBOARD.map(m=>`<div class="city-filter-chip ${filtroMes===m?'active':''}" data-filtro-mes="${m}">${m==="ACTUAL"?"AGO (en vivo)":m}</div>`).join("")}
     </div>
 
-    <h2 class="section-title">Categoría</h2>
+    <h2 class="section-title">Línea</h2>
     <select id="filtroCategoriaSelect" style="margin-bottom:16px;">
-      <option value="TODAS" ${filtroCategoria==="TODAS"?"selected":""}>Todas las categorías</option>
-      ${categoriasDisponibles().map(cat=>`<option value="${cat}" ${filtroCategoria===cat?"selected":""}>${cat}</option>`).join("")}
+      <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Todas las líneas</option>
+      ${lineasDisponiblesDashboard().map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
     </select>
 
     <div class="mini-note">🔒 Los días de stock y el detalle de ventas son confidenciales: se consultan en "💰 Ventas" (vendedor/comercial/administrador) o en la hoja "Dashboard" de Google Sheets. Acá se muestra el stock relevado.</div>
-    ${!esActual?`<div class="mini-note">📊 Estás viendo un mes histórico (planilla Trade Stock): no hay detalle por cliente para meses pasados, solo totales por categoría.</div>`:``}
+    ${!esActual?`<div class="mini-note">📊 Estás viendo un mes histórico (planilla Trade Stock): no hay detalle por cliente para meses pasados, solo totales por línea.</div>`:``}
 
     ${esActual?`
     <div class="card">
@@ -1258,16 +1263,33 @@ function screenDashboard(){
       if(!hist) return "";
       const max = Math.max(...hist,1);
       const esCombinado = ["ORURO","POTOSI","SUCRE","TARIJA"].includes(ciudadParaHistorico);
+
+      let ventaTotalFiltro = 0, mesVentas = "";
+      const puedeMostrarDias = puedeVerVentas() && STATE.ventasCache;
+      if(puedeMostrarDias){
+        const ventasPorCliente = STATE.ventasCache.ventas || {};
+        mesVentas = STATE.ventasCache.mesLabel || "";
+        const clientesParaVenta = filtroCiudad==="TODAS" ? clientesDeMiCiudad() : STATE.clientes.filter(c=>c.ciudad===filtroCiudad);
+        clientesParaVenta.forEach(c=>{
+          const v = ventasPorCliente[c.id];
+          if(v) Object.values(v).forEach(u=>{ ventaTotalFiltro += u; });
+        });
+      }
+
       return `
     <h2 class="section-title">Evolución del stock (mayo–agosto, planilla Trade Stock)</h2>
     <div class="card">
       ${esCombinado?`<div class="hint" style="margin-bottom:8px;">Dato histórico combinado de Oruro + Potosí + Sucre + Tarija: la planilla original no separaba estas 4 ciudades mes a mes.</div>`:""}
-      ${HISTORICO_MENSUAL.meses.map((m,i)=>`
+      ${HISTORICO_MENSUAL.meses.map((m,i)=>{
+        const diasEst = (puedeMostrarDias && ventaTotalFiltro>0) ? Math.round((hist[i]/(ventaTotalFiltro/30))*10)/10 : null;
+        return `
         <div class="bar-row">
-          <div class="top"><span>${m}${i===HISTORICO_MENSUAL.meses.length-1?" (agosto)":""}</span><span>${fmt(hist[i])} u.</span></div>
+          <div class="top"><span>${m}${i===HISTORICO_MENSUAL.meses.length-1?" (agosto)":""}</span><span>${fmt(hist[i])} u.${diasEst!=null?` · ${fmt(diasEst)} días`:""}</span></div>
           <div class="bar-track"><div class="bar-fill c${i%7}" style="width:${(hist[i]/max*100).toFixed(0)}%"></div></div>
-        </div>`).join("")}
-      <div class="hint" style="margin-top:6px;">Estos totales vienen de la planilla Trade Stock de referencia. El "Total unidades en stock" de arriba es el dato en vivo cargado en la app.</div>
+        </div>`;
+      }).join("")}
+      <div class="hint" style="margin-top:6px;">Estos totales vienen de la planilla Trade Stock de referencia. El "Total unidades en stock" de arriba es el dato en vivo cargado en la app.${puedeMostrarDias?` Los días de stock de mayo/junio/julio son una estimación: usan el ritmo de venta de ${mesVentas||"el mes cargado"}, no la venta real de ese mes (no la tenemos).`:""}</div>
+      ${!puedeMostrarDias && puedeVerVentas()?`<div class="hint">Para ver los días de stock acá, entrá primero a "💰 Ventas".</div>`:""}
     </div>`;
     })() : ``}
 
@@ -1282,18 +1304,18 @@ function screenDashboard(){
         </div>`).join("")}
     </div>` : ``}
 
-    <h2 class="section-title">Stock por categoría${filtroCategoria!=="TODAS"?" — "+filtroCategoria:""}</h2>
+    <h2 class="section-title">Stock por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}</h2>
     <div class="card">
-      ${Object.keys(porCategoria).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
-      Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).map(([cat,qty],i)=>`
+      ${Object.keys(porLinea).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
+      Object.entries(porLinea).sort((a,b)=>b[1]-a[1]).map(([l,qty],i)=>`
         <div class="bar-row">
-          <div class="top"><span>${cat}</span><span>${fmt(qty)} u.</span></div>
+          <div class="top"><span>${l}</span><span>${fmt(qty)} u.</span></div>
           <div class="bar-track"><div class="bar-fill c${i%7}" style="width:${(qty/maxCat*100).toFixed(0)}%"></div></div>
         </div>`).join("")}
     </div>
 
     ${esActual?`
-    <h2 class="section-title">Clientes con más stock${filtroCategoria!=="TODAS"?" en "+filtroCategoria:""} ${filtroCiudad==="TODAS"?"(participación sobre su propia ciudad)":"(participación sobre "+(NOMBRES_CIUDAD[filtroCiudad]||filtroCiudad)+")"}</h2>
+    <h2 class="section-title">Clientes con más stock${filtroLinea!=="TODAS"?" en "+filtroLinea:""} ${filtroCiudad==="TODAS"?"(participación sobre su propia ciudad)":"(participación sobre "+(NOMBRES_CIUDAD[filtroCiudad]||filtroCiudad)+")"}</h2>
     <div class="card">
       ${stockPorCliente.length===0?`<div class="hint">Todavía no hay conteos cargados para este filtro.</div>`:
       stockPorCliente.slice(0,8).map((r,i)=>{
