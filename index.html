@@ -386,6 +386,8 @@ let STATE = {
   dashboardFiltroCategoria: "TODAS",
   ventasCache: null,
   ventasFiltroLinea: "TODAS",
+  rechazandoId: null,
+  coberturaFiltroCiudad: "TODAS",
   ventasError: null,
   firmaAcuerdo: false,
   firmaMetodo: "dibujo",
@@ -618,6 +620,7 @@ function render(){
   else if(STATE.screen==="resumenCliente") html = screenResumenCliente();
   else if(STATE.screen==="firma") html = screenFirma();
   else if(STATE.screen==="vendedorLista") html = screenVendedorLista();
+  else if(STATE.screen==="cobertura") html = screenCobertura();
   else if(STATE.screen==="vendedorDetalle") html = screenVendedorDetalle();
   else if(STATE.screen==="dashboard") html = screenDashboard();
   else if(STATE.screen==="ventasDashboard") html = screenVentasDashboard();
@@ -642,7 +645,7 @@ function tabbar(active){
   let base;
   if(STATE.role==="comercial") base = [];
   else if(STATE.role==="relevador") base = [["clientes","🏬","Clientes"]];
-  else if(STATE.role==="administrador") base = [["vendedorLista","🛠️","Panel"]];
+  else if(STATE.role==="administrador") base = [["vendedorLista","🛠️","Panel"],["cobertura","👥","Cobertura"]];
   else base = [["vendedorLista","✅","Aprobaciones"]];
   if(puedeVerVentas()) base.push(["ventasDashboard","💰","Ventas"]);
   base.push(["dashboard","📊","Dashboard"], ["exportar","📤","Exportar"], ["login","↺","Salir"]);
@@ -754,10 +757,12 @@ function almacenListoParaConteo(rel){
   return !!(rel && rel.gps && rel.fotos && rel.fotos.slice(0,2).filter(Boolean).length===2);
 }
 
-/* Una vez enviado a aprobación (o ya aprobado/rechazado), el relevador ya no puede
-   tocar esos datos. Solo el Administrador puede seguir editando. */
+/* Una vez enviado a aprobación (o ya aprobado) el relevador ya no puede
+   tocar esos datos. Si el vendedor lo RECHAZA, se desbloquea de nuevo
+   automáticamente para que el relevador pueda corregir el error y volver
+   a enviarlo — el Administrador siempre puede seguir editando igual. */
 function almacenBloqueado(rel){
-  return !!(rel && rel.estadoVendedor && rel.estadoVendedor!=="borrador");
+  return !!(rel && rel.estadoVendedor && rel.estadoVendedor!=="borrador" && rel.estadoVendedor!=="rechazado");
 }
 function clienteBloqueado(cliente){
   return (cliente.almacenes||[]).some(a=>almacenBloqueado(STATE.relevamientos[a.id]));
@@ -883,6 +888,7 @@ function screenConteo(){
   return `
   ${header("Conteo de stock",a.nombre,true,"almacenes")}
   <main>
+    ${rel.estadoVendedor==="rechazado"?`<div class="mini-note" style="background:#f5e3e0;border-color:#dba79f;color:#7a2e2e;">⚠️ El vendedor rechazó este relevamiento${rel.comentarioVendedor?": \""+rel.comentarioVendedor+"\"":""}. Corregí lo que haga falta y volvé a enviarlo.</div>`:""}
     <div class="total-pill"><span>Total unidades contadas</span><span>${fmt(totalUnidades(rel))}</span></div>
     ${categoriasDesplegables(SKU_CATALOG,"conteos","sku",rel)}
     <div class="row-btns">
@@ -1008,6 +1014,72 @@ function screenEnvioExitoso(){
   </main>`;
 }
 
+/* Vista para el Administrador: quién relevó qué, y qué clientes ya tienen
+   (o no) su relevamiento hecho — para tener control del avance del equipo. */
+function screenCobertura(){
+  const todos = STATE.clientes; // todas las ciudades, sin filtrar, para tener el panorama completo
+  const filtroCiudad = STATE.coberturaFiltroCiudad || "TODAS";
+  const clientesVista = filtroCiudad==="TODAS" ? todos : todos.filter(c=>c.ciudad===filtroCiudad);
+
+  // resumen por relevador
+  const porRelevador = {};
+  todos.forEach(c=>{
+    (c.almacenes||[]).forEach(a=>{
+      const rel = STATE.relevamientos[a.id];
+      if(!rel || !rel.relevadorNombre) return;
+      const nombre = rel.relevadorNombre;
+      porRelevador[nombre] = porRelevador[nombre] || { almacenes:0, fechaUltima:null };
+      porRelevador[nombre].almacenes++;
+      const f = rel.fechaConteo ? new Date(rel.fechaConteo) : null;
+      if(f && (!porRelevador[nombre].fechaUltima || f>porRelevador[nombre].fechaUltima)) porRelevador[nombre].fechaUltima = f;
+    });
+  });
+  const relevadores = Object.entries(porRelevador).sort((a,b)=>b[1].almacenes-a[1].almacenes);
+
+  // cobertura de clientes: cuantos tienen al menos un almacen con conteo real
+  const totalClientesVista = clientesVista.length;
+  const cubiertos = clientesVista.filter(c=>clienteEstadoGeneral(c)!=="sin_iniciar").length;
+
+  return `
+  ${header("👥 Cobertura","Quién relevó y qué falta",false)}
+  <main>
+    <div class="city-filter-row">
+      <div class="city-filter-chip ${filtroCiudad==='TODAS'?'active':''}" data-filtro-cobertura-ciudad="TODAS">Todas</div>
+      ${CIUDADES.map(c=>`<div class="city-filter-chip ${filtroCiudad===c?'active':''}" data-filtro-cobertura-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
+    </div>
+
+    <div class="card">
+      <div class="metric"><span class="lbl">Clientes relevados</span><span class="val">${cubiertos} / ${totalClientesVista}</span></div>
+    </div>
+
+    <h2 class="section-title">Por relevador</h2>
+    <div class="card">
+      ${relevadores.length===0?`<div class="hint">Todavía nadie relevó nada.</div>`:
+      relevadores.map(([nombre,info])=>`
+        <div class="risk-item">
+          <div><div class="name">${nombre}</div><div class="sub">${info.fechaUltima?"Último: "+info.fechaUltima.toLocaleDateString():""}</div></div>
+          <span class="badge badge-approved">${info.almacenes} almacén(es)</span>
+        </div>`).join("")}
+    </div>
+
+    <h2 class="section-title">Cobertura de clientes${filtroCiudad!=="TODAS"?" — "+(NOMBRES_CIUDAD[filtroCiudad]||filtroCiudad):""}</h2>
+    <div class="card">
+      ${clientesVista.length===0?`<div class="hint">No hay clientes para este filtro.</div>`:
+      clientesVista.map(c=>{
+        const est = clienteEstadoGeneral(c);
+        const [label,cls] = badgeFor(est);
+        const recs = (c.almacenes||[]).map(a=>STATE.relevamientos[a.id]).filter(Boolean);
+        const relevadoPor = [...new Set(recs.map(r=>r.relevadorNombre).filter(Boolean))].join(", ");
+        return `<div class="risk-item">
+          <div><div class="name">${c.nombre} ${filtroCiudad==="TODAS"?`<span class="sub">(${c.ciudad})</span>`:""}</div><div class="sub">${relevadoPor||"sin relevar todavía"}</div></div>
+          <span class="badge ${cls}">${label}</span>
+        </div>`;
+      }).join("")}
+    </div>
+  </main>
+  ${tabbar('cobertura')}`;
+}
+
 function screenVendedorLista(){
   const todos = clientesDeMiCiudad();
   const grupos = agruparPorVendedor(todos);
@@ -1057,12 +1129,22 @@ function screenVendedorDetalle(){
         ${rel.firmaImg?`<div class="hint">Firma registrada ✔</div>`:""}
         ${rel.fotos.some(Boolean) ? `<div class="photo-grid" style="margin-top:10px;">${rel.fotos.map(f=>f?`<div class="photo-slot filled"><img src="${f}"></div>`:'').join("")}</div>`:""}
         ${rel.firmaImg?`<div class="photo-slot filled" style="aspect-ratio:16/8;margin-top:10px;"><img src="${rel.firmaImg}"></div>`:""}
+        ${rel.estadoVendedor==="rechazado" && rel.comentarioVendedor?`<div class="hint" style="background:#f5e3e0;border-radius:6px;padding:8px;margin-top:6px;">💬 Motivo del rechazo: ${rel.comentarioVendedor}</div>`:""}
         <div class="foot-actions">
-          ${rel.estadoVendedor==="pendiente"?`
+          ${rel.estadoVendedor==="pendiente" && STATE.rechazandoId!==a.id?`
             <button class="btn btn-primary" data-aprobar="${a.id}">Aprobar</button>
             <button class="btn btn-danger" data-rechazar="${a.id}">Rechazar</button>`:""}
           ${esAdministrador()?`<button class="btn btn-ghost" data-editar-almacen="${a.id}">✏️ Editar datos</button>`:""}
         </div>
+        ${STATE.rechazandoId===a.id?`
+        <div style="margin-top:10px;">
+          <div class="hint" style="margin-bottom:6px;">Contale al relevador qué está mal para que lo pueda corregir:</div>
+          <textarea id="motivoRechazoInput" rows="3" placeholder="Ej: falta contar la góndola de la entrada, el total no coincide..." style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-family:inherit;font-size:13.5px;"></textarea>
+          <div class="foot-actions" style="margin-top:8px;">
+            <button class="btn btn-primary" data-confirmar-rechazo="${a.id}">Confirmar rechazo</button>
+            <button class="btn btn-ghost" data-cancelar-rechazo="1">Cancelar</button>
+          </div>
+        </div>`:""}
       </div>`;
     }).join("")}
   </main>
@@ -1451,6 +1533,9 @@ function bindEvents(){
   $app.querySelectorAll("[data-filtro-ciudad]").forEach(el=>{
     el.addEventListener("click",()=>{ STATE.dashboardFiltroCiudad = el.dataset.filtroCiudad; render(); });
   });
+  $app.querySelectorAll("[data-filtro-cobertura-ciudad]").forEach(el=>{
+    el.addEventListener("click",()=>{ STATE.coberturaFiltroCiudad = el.dataset.filtroCoberturaCiudad; render(); });
+  });
   $app.querySelectorAll("[data-filtro-mes]").forEach(el=>{
     el.addEventListener("click",()=>{ STATE.dashboardFiltroMes = el.dataset.filtroMes; render(); });
   });
@@ -1703,9 +1788,25 @@ function bindEvents(){
     });
   }
   $app.querySelectorAll("[data-rechazar]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      STATE.rechazandoId = el.dataset.rechazar;
+      render();
+    });
+  });
+  $app.querySelectorAll("[data-cancelar-rechazo]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      STATE.rechazandoId = null;
+      render();
+    });
+  });
+  $app.querySelectorAll("[data-confirmar-rechazo]").forEach(el=>{
     el.addEventListener("click", async ()=>{
-      STATE.relevamientos[el.dataset.rechazar].estadoVendedor = "rechazado";
-      await saveRelevamientoActual(el.dataset.rechazar);
+      const almacenId = el.dataset.confirmarRechazo;
+      const motivo = (document.getElementById("motivoRechazoInput")||{}).value || "";
+      STATE.relevamientos[almacenId].estadoVendedor = "rechazado";
+      STATE.relevamientos[almacenId].comentarioVendedor = motivo.trim();
+      STATE.rechazandoId = null;
+      await saveRelevamientoActual(almacenId);
       render();
     });
   });
