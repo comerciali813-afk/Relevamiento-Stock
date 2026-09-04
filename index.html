@@ -416,6 +416,7 @@ let STATE = {
   ventasFiltroLinea: "TODAS",
   rechazandoId: null,
   coberturaFiltroCiudad: "TODAS",
+  dash2Colapso: { linea:false, clientes:false },
   ventasError: null,
   firmaAcuerdo: false,
   firmaMetodo: "dibujo",
@@ -1477,14 +1478,18 @@ function screenDashboard(){
   <div class="dash2-card">
     <div class="title">Evolución del stock ${puedeMostrarDias?"y días de cobertura":""}</div>
     ${esCombinado?`<div class="hint" style="margin-bottom:8px;">Dato combinado de Oruro + Potosí + Sucre + Tarija.</div>`:""}
-    <svg viewBox="0 0 300 110" style="width:100%;display:block;">
+    <svg viewBox="0 0 300 118" style="width:100%;display:block;">
       <line x1="0" y1="90" x2="300" y2="90" stroke="#eef1f5" stroke-width="1"></line>
-      ${puntos.map((p,i)=>`<rect x="${p.x-16}" y="${90-(p.v/maxH*55)}" width="32" height="${(p.v/maxH*55)}" rx="4" fill="${i===puntos.length-1?'#0e8f6f':'#bcd8cd'}"></rect>`).join("")}
+      ${puntos.map((p,i)=>{
+        const barY = 90-(p.v/maxH*55);
+        return `<rect x="${p.x-16}" y="${barY}" width="32" height="${(p.v/maxH*55)}" rx="4" fill="${i===puntos.length-1?'#0e8f6f':'#bcd8cd'}"></rect>
+        <text x="${p.x}" y="${barY-4}" text-anchor="middle" font-size="9" font-weight="700" fill="#5b6660">${fmt(p.v)}</text>`;
+      }).join("")}
       ${puedeMostrarDias?`<polyline points="${polyline}" fill="none" stroke="#2f5fd8" stroke-width="2.5"></polyline>
       ${puntos.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${i===puntos.length-1?5:4}" fill="${p.d!=null&&p.d<7?'#d81f1f':'#2f5fd8'}"></circle>${p.d!=null?`<text x="${p.x}" y="${p.y-8}" text-anchor="middle" font-size="10" font-weight="700" fill="${p.d<7?'#d81f1f':'#152a4a'}">${fmt(p.d)}d</text>`:``}`).join("")}`:``}
       ${HISTORICO_MENSUAL.meses.map((m,i)=>`<text x="${30+i*80}" y="104" text-anchor="middle" font-size="10" fill="#98a2b3">${m}</text>`).join("")}
     </svg>
-    <div class="hint" style="margin-top:6px;">Barras = unidades (planilla Trade Stock).${puedeMostrarDias?` Línea = días de stock (mayo/junio/julio son una estimación con el ritmo de venta de ${mesVentas||"el mes cargado"}).`:""}</div>
+    <div class="hint" style="margin-top:6px;">Barras = unidades de stock (planilla Trade Stock).${puedeMostrarDias?` Línea = días de stock (mayo/junio/julio son una estimación con el ritmo de venta de ${mesVentas||"el mes cargado"}).`:""}</div>
   </div>`;
   })() : ``}
 
@@ -1510,8 +1515,11 @@ function screenDashboard(){
   </div>` : ``}
 
   <div class="dash2-card">
-    <div class="title">Stock por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}${puedeMostrarDias?" y días de cobertura":""}</div>
-    ${Object.keys(porLinea).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
+    <div class="title" data-toggle-seccion="linea" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+      <span>${STATE.dash2Colapso.linea?'▸':'▾'} Stock por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}${puedeMostrarDias?" y días de cobertura":""}</span>
+    </div>
+    ${STATE.dash2Colapso.linea ? `` :
+    Object.keys(porLinea).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
     Object.entries(porLinea).sort((a,b)=>b[1]-a[1]).map(([l,qty])=>{
       const dias = diasPorLinea[l];
       const cls = claseDias(dias);
@@ -1567,8 +1575,9 @@ function screenDashboard(){
 
   ${esActual?`
   <div class="dash2-card">
-    <div class="title">Clientes con más stock${filtroLinea!=="TODAS"?" en "+filtroLinea:""}</div>
-    ${stockPorCliente.length===0?`<div class="hint">Todavía no hay conteos para este filtro.</div>`:
+    <div class="title" data-toggle-seccion="clientes" style="cursor:pointer;">${STATE.dash2Colapso.clientes?'▸':'▾'} Clientes con más stock${filtroLinea!=="TODAS"?" en "+filtroLinea:""}</div>
+    ${STATE.dash2Colapso.clientes ? `` :
+    stockPorCliente.length===0?`<div class="hint">Todavía no hay conteos para este filtro.</div>`:
     stockPorCliente.slice(0,8).map((r,i)=>{
       const base = filtroCiudad==="TODAS" ? (porCiudad[r.ciudad]||1) : totalStockCiudad;
       const pct = base>0 ? Math.round((r.stock/base)*1000)/10 : 0;
@@ -1633,6 +1642,13 @@ function bindEvents(){
     el.addEventListener("click",()=>{
       const l = el.dataset.toggleLinea;
       STATE.dashboardFiltroCategoria = (STATE.dashboardFiltroCategoria===l) ? "TODAS" : l;
+      render();
+    });
+  });
+  $app.querySelectorAll("[data-toggle-seccion]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const k = el.dataset.toggleSeccion;
+      STATE.dash2Colapso[k] = !STATE.dash2Colapso[k];
       render();
     });
   });
