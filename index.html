@@ -1211,27 +1211,20 @@ function screenVentasDashboard(){
   const clientes = filtro==="TODAS" ? clientesDeMiCiudad() : STATE.clientes.filter(c=>c.ciudad===filtro);
   const filtroLinea = STATE.ventasFiltroLinea || "TODAS";
 
-  const header1 = `
-  <header class="top">
-    <div class="mark">RS</div>
-    <div class="titles">
-      <h1>💰 Ventas y días de stock</h1>
-      <div class="sub">${filtro==="TODAS"?nombreCiudad(STATE.ciudad):nombreCiudad(filtro)} · confidencial</div>
-      <span class="dash-month">📅 ${mesActualLabel()}</span>
-    </div>
-  </header>`;
+  const header2 = `<div class="dash2-header"><div class="t">💰 Ventas — impacto en días de stock</div><div class="s">${filtro==="TODAS"?nombreCiudad(STATE.ciudad):nombreCiudad(filtro)} · confidencial · ${mesActualLabel()}</div></div>`;
 
   if(STATE.ventasCache===null && !STATE.ventasError){
-    return `${header1}<main><div class="empty"><div class="big">⏳</div>Cargando datos de venta…</div></main>${tabbar('ventas')}`;
+    return `${header2}<main style="padding:0 0 90px;"><div class="empty"><div class="big">⏳</div>Cargando datos de venta…</div></main>${tabbar('ventas')}`;
   }
   if(STATE.ventasError){
-    return `${header1}<main>
-      <div class="mini-note" style="background:#f5e3e0;border-color:#dba79f;color:#7a2e2e;">❌ No se pudieron cargar las ventas: ${STATE.ventasError}</div>
-      <button class="btn btn-primary" id="reintentarVentas">Reintentar</button>
+    return `${header2}<main style="padding:0 0 90px;">
+      <div class="mini-note" style="margin:14px 18px;background:#f5e3e0;border-color:#dba79f;color:#7a2e2e;">❌ No se pudieron cargar las ventas: ${STATE.ventasError}</div>
+      <button class="btn btn-primary" id="reintentarVentas" style="margin:0 18px;width:calc(100% - 36px);">Reintentar</button>
     </main>${tabbar('ventas')}`;
   }
 
   const ventasPorCliente = (STATE.ventasCache && STATE.ventasCache.ventas) || {};
+  const ventasPorLinea3 = (STATE.ventasCache && STATE.ventasCache.ventasPorLinea3) || {};
   const mesVentas = (STATE.ventasCache && STATE.ventasCache.mesLabel) || "";
 
   const filas = []; // {nombre, ciudad, linea, stock, ventaUnidades, dias}
@@ -1248,97 +1241,146 @@ function screenVentasDashboard(){
   });
   filas.sort((a,b)=>a.dias-b.dias);
 
+  const porLineaAgg = {}; // linea -> {stock, venta}
+  filas.forEach(f=>{
+    porLineaAgg[f.linea] = porLineaAgg[f.linea] || { stock:0, venta:0 };
+    porLineaAgg[f.linea].stock += f.stock;
+    porLineaAgg[f.linea].venta += f.ventaUnidades;
+  });
+  const lineasConDatos = Object.entries(porLineaAgg).map(([linea,v])=>({
+    linea, stock:v.stock, venta:v.venta, dias: v.venta>0?Math.round((v.stock/(v.venta/30))*10)/10:null
+  })).sort((a,b)=>b.venta-a.venta);
+
   const porCiudad = {};
-  filas.forEach(f=>{ porCiudad[f.ciudad] = porCiudad[f.ciudad]||[]; porCiudad[f.ciudad].push(f.dias); });
+  filas.forEach(f=>{ porCiudad[f.ciudad] = porCiudad[f.ciudad]||{stock:0,venta:0}; porCiudad[f.ciudad].stock+=f.stock; porCiudad[f.ciudad].venta+=f.ventaUnidades; });
+  const regionRows = Object.entries(porCiudad).map(([ciudad,v])=>({ ciudad, dias: v.venta>0?Math.round((v.stock/(v.venta/30))*10)/10:null })).sort((a,b)=>(a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
+
+  const ventaTotalMes = filas.reduce((a,f)=>a+f.ventaUnidades,0);
+  const diasConDato = filas.map(f=>f.dias);
+  const diasPromedio = diasConDato.length ? Math.round((diasConDato.reduce((a,b)=>a+b,0)/diasConDato.length)*10)/10 : null;
+  const enRiesgo = lineasConDatos.filter(l=>l.dias!=null && l.dias<15);
 
   const lineasDisponibles = Object.keys(LINEA2_A_LINEA3).sort();
-  const resumenLineas = LINEAS_PRINCIPALES.map(linea=>{
-    const filasLinea = filas.filter(f=>f.linea===linea);
-    if(filasLinea.length===0) return { linea, stock:0, venta:0, dias:null };
-    const stock = filasLinea.reduce((a,f)=>a+f.stock,0);
-    const venta = filasLinea.reduce((a,f)=>a+f.ventaUnidades,0);
-    const dias = Math.round((stock/(venta/30))*10)/10;
-    return { linea, stock, venta, dias };
-  });
 
-  // Detalle por línea 3, dentro de la línea2 elegida
-  let detalleLinea3 = [];
-  if(filtroLinea!=="TODAS"){
-    const linea3sCatalogo = LINEA2_A_LINEA3[filtroLinea] || [];
-    const ventasPorLinea3 = (STATE.ventasCache && STATE.ventasCache.ventasPorLinea3) || {};
-    linea3sCatalogo.forEach(linea3=>{
-      clientes.forEach(c=>{
-        const stockL3 = stockPorLinea3Cliente(c, filtroLinea);
-        const stockCliente = stockL3[linea3];
-        if(!stockCliente) return;
-        const ventaL3 = ((ventasPorLinea3[c.id]||{})[filtroLinea]) || {};
-        const ventaCliente = ventaL3[linea3];
-        const dias = ventaCliente ? Math.round((stockCliente/(ventaCliente/30))*10)/10 : null;
-        detalleLinea3.push({ linea3, nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente, venta:ventaCliente?Math.round(ventaCliente):null, dias });
-      });
-    });
-    detalleLinea3.sort((a,b)=> (a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
-  }
+  const mejorLinea = lineasConDatos.filter(l=>l.dias!=null).sort((a,b)=>b.dias-a.dias)[0];
+  const peorLinea = lineasConDatos.filter(l=>l.dias!=null).sort((a,b)=>a.dias-b.dias)[0];
+  const insight = peorLinea && peorLinea.dias<15
+    ? `⚠️ ${peorLinea.linea} tiene solo ${fmt(peorLinea.dias)} días de cobertura — priorizá reponer stock ahí este mes.`
+    : mejorLinea ? `✅ Todas las líneas con venta cargada están en 15 días o más de cobertura. La mejor es ${mejorLinea.linea} con ${fmt(mejorLinea.dias)} días.` : ``;
 
   return `
-  ${header1}
-  <main>
-    ${puedeFiltrar ? `
-    <h2 class="section-title">Ciudad</h2>
-    <div class="city-filter-row">
-      <div class="city-filter-chip ${filtro==='TODAS'?'active':''}" data-filtro-ciudad="TODAS">Todas</div>
-      ${CIUDADES.map(c=>`<div class="city-filter-chip ${filtro===c?'active':''}" data-filtro-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
-    </div>` : ``}
-
-    <h2 class="section-title">Línea</h2>
-    <select id="ventasFiltroLineaSelect" style="margin-bottom:16px;">
-      <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Todas las líneas (resumen)</option>
-      ${lineasDisponibles.map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
-    </select>
-
-    <div class="mini-note">🔒 Esta información es confidencial: solo la ven vendedores, comerciales y administradores. Las ventas se cargan pegando el reporte mensual directo en Google Sheets (hoja "Ventas"), nunca desde esta app. El cruce es por línea de producto${mesVentas?" · venta cargada: "+mesVentas:""}.</div>
-
-    ${Object.keys(porCiudad).length>1 ? `
-    <h2 class="section-title">Días de stock promedio por regional</h2>
-    <div class="card">
-      ${Object.entries(porCiudad).map(([ciudad,arr])=>{
-        const prom = Math.round((arr.reduce((a,b)=>a+b,0)/arr.length)*10)/10;
-        const [lbl,cls] = nivelRiesgoVentas(prom);
-        return `<div class="risk-item"><div><div class="name">${NOMBRES_CIUDAD[ciudad]||ciudad}</div><div class="sub">${arr.length} línea(s) con dato</div></div><span class="badge ${cls}">${fmt(prom)} días</span></div>`;
-      }).join("")}
-    </div>` : ``}
-
-    <h2 class="section-title">Resumen — líneas principales</h2>
-    <div class="card">
-      ${resumenLineas.map(r=>{
-        const [lbl,cls] = nivelRiesgoVentas(r.dias);
-        return `<div class="risk-item">
-          <div><div class="name">${r.linea}</div><div class="sub">${r.dias!=null?`Stock ${fmt(r.stock)} u. · Venta ${fmt(r.venta)} u./mes`:"sin datos"}</div></div>
-          <span class="badge ${cls}">${r.dias!=null?fmt(r.dias)+" días":"—"}</span>
-        </div>`;
-      }).join("")}
+  ${header2}
+  <main style="padding:0 0 90px;">
+    <div class="dash2-filters">
+      ${puedeFiltrar?`<select id="dash2CiudadVentas">
+        <option value="TODAS" ${filtro==='TODAS'?'selected':''}>Todas las ciudades</option>
+        ${CIUDADES.map(c=>`<option value="${c}" ${filtro===c?'selected':''}>${NOMBRES_CIUDAD[c]||c}</option>`).join("")}
+      </select>`:``}
+      <select id="ventasFiltroLineaSelect">
+        <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Todas las líneas</option>
+        ${lineasDisponibles.map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
+      </select>
     </div>
 
-    ${filtroLinea!=="TODAS"?`
-    <h2 class="section-title">Detalle por línea 3 — ${filtroLinea}</h2>
-    <div class="card">
-      ${(LINEA2_A_LINEA3[filtroLinea]||[]).length===0?`<div class="hint">Esta línea no tiene un desglose de línea 3 cargado en el catálogo.</div>`:
-      detalleLinea3.length===0?`<div class="hint">Ninguno de los clientes relevados tiene stock en esta línea todavía.</div>`:
-      (()=>{
-        let ultimaLinea3 = null;
-        return detalleLinea3.map(f=>{
-          const [lbl,cls] = nivelRiesgoVentas(f.dias);
-          const nuevoGrupo = f.linea3!==ultimaLinea3;
-          ultimaLinea3 = f.linea3;
-          return `${nuevoGrupo?`<div style="font-weight:700;font-size:12.5px;color:var(--brand-dark);margin:${detalleLinea3.indexOf(f)===0?"0":"14px"} 0 6px;">▸ ${f.linea3}</div>`:""}
-          <div class="risk-item">
-            <div><div class="name">${f.nombre}${filtro==="TODAS"?` <span class="sub">(${f.ciudad})</span>`:""}</div><div class="sub">Stock ${fmt(f.stock)} u.${f.venta!=null?` · Venta ${fmt(f.venta)} u./mes`:""}</div></div>
-            <span class="badge ${cls}">${f.dias!=null?fmt(f.dias)+" días":"sin venta cargada"}</span>
-          </div>`;
-        }).join("");
-      })()}
+    <div class="dash2-metrics">
+      <div class="dash2-metric">
+        <div class="ic" style="background:#eaf0fd;">🛒</div>
+        <div class="lbl">Ventas del mes (u.)</div>
+        <div class="val">${fmt(ventaTotalMes)}</div>
+        <div class="trend" style="color:#8a94a3;">${mesVentas||""}</div>
+      </div>
+      <div class="dash2-metric">
+        <div class="ic" style="background:#e5f6ef;">⏱️</div>
+        <div class="lbl">Días de stock prom.</div>
+        <div class="val">${diasPromedio!=null?fmt(diasPromedio):"—"}</div>
+        <div class="trend" style="color:#8a94a3;">sobre líneas con venta</div>
+      </div>
+      <div class="dash2-metric">
+        <div class="ic" style="background:#fdeeee;">⚠️</div>
+        <div class="lbl">Líneas en riesgo</div>
+        <div class="val">${enRiesgo.length}</div>
+        <div class="trend" style="color:#8a94a3;">&lt;15 días</div>
+      </div>
+    </div>
+
+    <div class="mini-note" style="margin:0 18px 14px;">🔒 Confidencial: solo vendedores, comerciales y administradores. Cargado en Google Sheets, hoja "Ventas".${huboStockSinVenta?" Algunas líneas con stock todavía no tienen venta cargada este mes.":""}</div>
+
+    ${insight?`<div class="dash2-card" style="background:${peorLinea&&peorLinea.dias<15?'#fff1e0':'#e5f6ef'};">
+      <div class="title" style="margin-bottom:4px;">${peorLinea&&peorLinea.dias<15?'Necesita atención':'Buen desempeño'}</div>
+      <div class="hint" style="color:#152a4a;">${insight}</div>
+    </div>`:``}
+
+    ${Object.keys(porCiudad).length>1 ? `
+    <div class="dash2-card">
+      <div class="title">Ventas por región</div>
+      ${regionRows.map(r=>{
+        const cls = claseDias(r.dias);
+        return `<div class="linea2-row" style="cursor:default;">
+          <span style="font-size:12px;font-weight:700;color:#152a4a;">${NOMBRES_CIUDAD[r.ciudad]||r.ciudad}</span>
+          <span class="dias-badge ${cls}">${r.dias!=null?fmt(r.dias)+" días":"sin venta"}</span>
+        </div>`;
+      }).join("")}
     </div>` : ``}
-    ${huboStockSinVenta?`<div class="hint" style="text-align:center;">Algunas líneas con stock relevado todavía no tienen venta cargada para este mes — no se les calculó días de stock.</div>`:``}
+
+    ${enRiesgo.length>0?`
+    <div class="dash2-card">
+      <div class="title">Líneas que requieren atención</div>
+      ${enRiesgo.slice(0,5).map(l=>{
+        const cls = claseDias(l.dias);
+        return `<div class="linea2-row" style="cursor:default;background:#fff8f6;">
+          <span style="font-size:12px;font-weight:700;color:#152a4a;">${l.linea}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:#8a94a3;">${fmt(l.stock)} u.</span>
+            <span class="dias-badge ${cls}">${fmt(l.dias)} días</span>
+          </span>
+        </div>`;
+      }).join("")}
+    </div>`:``}
+
+    <div class="dash2-card">
+      <div class="title">Ventas por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}</div>
+      ${lineasConDatos.length===0?`<div class="hint">Sin datos para este filtro.</div>`:
+      lineasConDatos.map(l=>{
+        const cls = claseDias(l.dias);
+        const abierto = filtroLinea===l.linea;
+        return `
+        <div class="linea2-row ${abierto?'open':''}" data-toggle-linea-ventas="${l.linea}">
+          <span style="font-size:12px;font-weight:700;color:#152a4a;">${abierto?'▾':'▸'} ${l.linea}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:#8a94a3;">${fmt(l.venta)} u./mes</span>
+            <span class="dias-badge ${cls}">${l.dias!=null?fmt(l.dias)+" días":"sin dato"}</span>
+          </span>
+        </div>
+        ${abierto ? (()=>{
+          const linea3sCatalogo = LINEA2_A_LINEA3[l.linea] || [];
+          const detalleL3 = [];
+          linea3sCatalogo.forEach(linea3=>{
+            clientes.forEach(c=>{
+              const stockL3 = stockPorLinea3Cliente(c, l.linea);
+              const stockCliente = stockL3[linea3];
+              if(!stockCliente) return;
+              const ventaL3 = ((ventasPorLinea3[c.id]||{})[l.linea]) || {};
+              const ventaCliente = ventaL3[linea3];
+              const dias = ventaCliente ? Math.round((stockCliente/(ventaCliente/30))*10)/10 : null;
+              detalleL3.push({ linea3, nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente, venta:ventaCliente?Math.round(ventaCliente):null, dias });
+            });
+          });
+          if(linea3sCatalogo.length===0) return `<div class="hint linea3-sub">Sin desglose de línea 3 para esta línea.</div>`;
+          if(detalleL3.length===0) return `<div class="hint linea3-sub">Ningún cliente relevado tiene stock acá todavía.</div>`;
+          detalleL3.sort((a,b)=>(a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
+          return `<div class="linea3-sub">${detalleL3.map(f=>{
+            const clsF = claseDias(f.dias);
+            return `<div class="linea3-item">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11.5px;font-weight:700;color:#152a4a;">${f.linea3}</div>
+                <div style="font-size:10px;color:#98a2b3;">${f.nombre}${filtro==="TODAS"?` (${f.ciudad})`:""} · Stock ${fmt(f.stock)} u.${f.venta!=null?` · Venta ${fmt(f.venta)} u./mes`:``}</div>
+              </div>
+              <span class="dias-badge ${clsF}">${f.dias!=null?fmt(f.dias)+"d":"—"}</span>
+            </div>`;
+          }).join("")}</div>`;
+        })() : ``}`;
+      }).join("")}
+    </div>
   </main>
   ${tabbar('ventas')}`;
 }
@@ -1482,8 +1524,9 @@ function screenDashboard(){
       <line x1="0" y1="90" x2="300" y2="90" stroke="#eef1f5" stroke-width="1"></line>
       ${puntos.map((p,i)=>{
         const barY = 90-(p.v/maxH*55);
-        return `<rect x="${p.x-16}" y="${barY}" width="32" height="${(p.v/maxH*55)}" rx="4" fill="${i===puntos.length-1?'#0e8f6f':'#bcd8cd'}"></rect>
-        <text x="${p.x}" y="${barY-4}" text-anchor="middle" font-size="9" font-weight="700" fill="#5b6660">${fmt(p.v)}</text>`;
+        const esUltimo = i===puntos.length-1;
+        return `<rect x="${p.x-16}" y="${barY}" width="32" height="${(90-barY)}" rx="4" fill="${esUltimo?'#0e8f6f':'#bcd8cd'}"></rect>
+        <text x="${p.x}" y="86" text-anchor="middle" font-size="9" font-weight="700" fill="${esUltimo?'#ffffff':'#1f4136'}">${fmt(p.v)}</text>`;
       }).join("")}
       ${puedeMostrarDias?`<polyline points="${polyline}" fill="none" stroke="#2f5fd8" stroke-width="2.5"></polyline>
       ${puntos.map((p,i)=>`<circle cx="${p.x}" cy="${p.y}" r="${i===puntos.length-1?5:4}" fill="${p.d!=null&&p.d<7?'#d81f1f':'#2f5fd8'}"></circle>${p.d!=null?`<text x="${p.x}" y="${p.y-8}" text-anchor="middle" font-size="10" font-weight="700" fill="${p.d<7?'#d81f1f':'#152a4a'}">${fmt(p.d)}d</text>`:``}`).join("")}`:``}
@@ -1652,10 +1695,19 @@ function bindEvents(){
       render();
     });
   });
+  $app.querySelectorAll("[data-toggle-linea-ventas]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const l = el.dataset.toggleLineaVentas;
+      STATE.ventasFiltroLinea = (STATE.ventasFiltroLinea===l) ? "TODAS" : l;
+      render();
+    });
+  });
   const ventasFiltroLineaSelect = document.getElementById("ventasFiltroLineaSelect");
   if(ventasFiltroLineaSelect){
     ventasFiltroLineaSelect.addEventListener("change",()=>{ STATE.ventasFiltroLinea = ventasFiltroLineaSelect.value; render(); });
   }
+  const dash2CiudadVentas = document.getElementById("dash2CiudadVentas");
+  if(dash2CiudadVentas){ dash2CiudadVentas.addEventListener("change",()=>{ STATE.dashboardFiltroCiudad = dash2CiudadVentas.value; render(); }); }
 
   $app.querySelectorAll("[data-role]").forEach(el=>{
     el.addEventListener("click", async ()=>{
