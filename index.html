@@ -155,6 +155,27 @@ details.cat-block-l3 summary .count{color:#c98a2c;}
 .city-mini{flex:1;border-radius:9px;padding:8px 6px;text-align:center;}
 .city-mini .lbl{font-size:9px;font-weight:700;}
 .city-mini .val{font-size:15px;font-weight:700;color:#152a4a;}
+
+/* --- Pantalla de inicio nueva --- */
+.login-hero{background:linear-gradient(135deg,#152a4a,#0c1a30);color:#fff;padding:26px 20px 22px;text-align:center;}
+.login-hero .cube{width:52px;height:52px;margin:0 auto 10px;}
+.login-hero h1{font-size:21px;font-weight:800;margin:0;}
+.login-hero h1 b{color:#4fd1a5;}
+.login-hero .sub{font-size:12px;opacity:.75;margin-top:3px;}
+.login-body{padding:16px 18px 0;}
+.login-note{border-radius:10px;padding:11px 12px;font-size:12px;line-height:1.5;margin-bottom:10px;display:flex;gap:9px;align-items:flex-start;}
+.login-note .ic2{font-size:16px;flex:none;}
+.login-step{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#152a4a;margin:16px 0 10px;display:flex;align-items:center;gap:7px;}
+.login-step .num{width:18px;height:18px;border-radius:50%;background:#152a4a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:10.5px;}
+.city-icon-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;}
+.city-icon-btn{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e2e6ec;border-radius:12px;padding:10px 11px;cursor:pointer;}
+.city-icon-btn.active{border-color:#152a4a;border-width:2px;}
+.city-icon-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none;}
+.city-icon-btn .lbl{font-size:12.5px;font-weight:800;color:#152a4a;flex:1;}
+.otros-accesos-lbl{text-align:center;font-size:9.5px;color:#98a2b3;text-transform:uppercase;letter-spacing:.06em;margin:14px 0 8px;}
+.login-illustration{margin:20px -18px 0;position:relative;}
+.login-illustration .frase{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#fff;font-family:var(--font-voice,serif);font-style:italic;font-size:14px;text-shadow:0 1px 4px rgba(0,0,0,.4);}
+.login-version{text-align:center;font-size:9.5px;color:#98a2b3;padding:10px 0 4px;}
 </style>
 </head>
 <body>
@@ -683,24 +704,48 @@ function tabbar(active){
 
 function screenLogin(){
   const elegida = STATE.loginCiudadElegida;
+  const CITY_ICONOS = {
+    CBBA:{ ic:"🏔️", bg:"#3a6ea5" }, LPZ:{ ic:"🏙️", bg:"#7d5ba6" }, SCZ:{ ic:"🌴", bg:"#e08a3c" },
+    ORURO:{ ic:"🏛️", bg:"#2f8fa3" }, POTOSI:{ ic:"⛰️", bg:"#a63a3a" }, SUCRE:{ ic:"🏘️", bg:"#2f8f74" }, TARIJA:{ ic:"🍇", bg:"#c9973a" },
+  };
   return `
-  <header class="top"><div class="mark">RS</div><div class="titles"><h1>Relevamiento de Stock</h1><div class="sub">Todo Brillo · Carissa · Revive · Fixer</div></div></header>
-  <main>
-    <div class="mini-note">Cada ciudad tiene su propio acceso. Al ingresar solo vas a ver los clientes de tu ciudad.</div>
-    <div class="mini-note" style="background:${USE_BACKEND?'var(--brand-soft)':'#f5e3e0'};border-color:${USE_BACKEND?'var(--brand)':'#dba79f'};color:${USE_BACKEND?'var(--brand-dark)':'#7a2e2e'};">
-      ${USE_BACKEND
-        ? "🟢 Conectado a tu base de datos real. Los datos se comparten entre todos los que entren a esta app."
-        : "🟠 Sin backend conectado: los datos se guardan solo en este navegador (no se comparten con otros celulares). Configurá API_URL para conectar el backend real."}
+  <div class="login-hero">
+    <svg class="cube" viewBox="0 0 52 52"><polygon points="26,4 46,15 46,37 26,48 6,37 6,15" fill="none" stroke="#4fd1a5" stroke-width="2"></polygon><polygon points="26,4 46,15 26,26 6,15" fill="#4fd1a5" opacity=".85"></polygon><polygon points="6,15 26,26 26,48 6,37" fill="#ffffff" opacity=".18"></polygon><polygon points="46,15 26,26 26,48 46,37" fill="#ffffff" opacity=".08"></polygon></svg>
+    <h1>Relevamiento de <b>Stock</b></h1>
+    <div class="sub">Todo Brillo · Carissa · Revive · Fixer</div>
+  </div>
+  <div class="login-body">
+    <div class="login-note" style="background:${USE_BACKEND?'#e5f6ef':'#fdeeee'};color:${USE_BACKEND?'#0e8f6f':'#a31f1f'};">
+      <span class="ic2">${USE_BACKEND?'🟢':'🟠'}</span>
+      <span>${USE_BACKEND ? "Conectado a tu base de datos real. Los datos se comparten en tiempo real entre todos los que entren a esta app." : "Sin backend conectado: los datos se guardan solo en este navegador."}</span>
     </div>
-    <div class="mini-note" style="background:#f6e9d3;border-color:#e6cf9e;color:#7a5310;">
-      🧪 Modo de pruebas: por ahora no pide contraseña. Elegí tu ciudad y tu nombre para entrar.
+    <div class="login-note" style="background:#fff1e0;color:#a3730a;">
+      <span class="ic2">🧪</span>
+      <span>Modo de pruebas: por ahora no pide contraseña. Elegí tu ciudad y tu nombre para entrar.</span>
     </div>
-    <h2 class="section-title">1. Elegí tu usuario</h2>
-    <div class="city-grid">
-      ${CIUDADES.map(c=>`<div class="city-btn ${elegida===c?'active':''}" data-elegir-ciudad="${c}">${NOMBRES_CIUDAD[c]||c}</div>`).join("")}
+
+    <div class="login-step"><span class="num">1</span>Elegí tu usuario</div>
+    <div class="city-icon-grid">
+      ${CIUDADES.map(c=>{ const ci = CITY_ICONOS[c]; return `
+      <div class="city-icon-btn ${elegida===c?'active':''}" data-elegir-ciudad="${c}">
+        <div class="city-icon-avatar" style="background:${ci.bg};">${ci.ic}</div>
+        <span class="lbl">${NOMBRES_CIUDAD[c]||c}</span>
+        <span style="color:#c2c8d1;">›</span>
+      </div>`; }).join("")}
     </div>
-    <div class="city-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}" style="text-align:center;margin:-6px 0 10px;">👤 Gerencia Nacional <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve todas las ciudades</span></div>
-    <div class="city-btn ${elegida===ADMIN?'active':''}" data-elegir-ciudad="${ADMIN}" style="text-align:center;margin:0 0 16px;background:#efe6f7;border-color:#c9adde;">🔑 Administrador <span style="font-weight:400;font-size:11.5px;display:block;color:#6b756f;">ve y edita todas las ciudades, incluso lo ya enviado</span></div>
+
+    <div class="otros-accesos-lbl">Otros accesos</div>
+    <div class="city-icon-grid" style="margin-bottom:6px;">
+      <div class="city-icon-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}">
+        <div class="city-icon-avatar" style="background:#152a4a;">👥</div>
+        <span class="lbl">Gerencia Nacional</span><span style="color:#c2c8d1;">›</span>
+      </div>
+      <div class="city-icon-btn ${elegida===ADMIN?'active':''}" data-elegir-ciudad="${ADMIN}">
+        <div class="city-icon-avatar" style="background:#7d5ba6;">🔑</div>
+        <span class="lbl">Administrador</span><span style="color:#c2c8d1;">›</span>
+      </div>
+    </div>
+
     ${elegida===ADMIN ? `
     <div class="card">
       <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
@@ -715,7 +760,27 @@ function screenLogin(){
       </div>
       <button class="btn btn-ghost" data-role="comercial" style="margin-top:10px;">💰 Ingresar como comercial</button>
     </div>` : ``}
-  </main>`;
+  </div>
+
+  <div class="login-illustration">
+    <svg viewBox="0 0 380 150" style="width:100%;display:block;">
+      <rect x="0" y="0" width="380" height="150" fill="#0c1a30"></rect>
+      <polygon points="0,150 60,80 130,150" fill="#16253f"></polygon>
+      <polygon points="90,150 180,55 270,150" fill="#1b2c4a"></polygon>
+      <polygon points="240,150 320,90 380,150" fill="#16253f"></polygon>
+      <rect x="34" y="96" width="30" height="30" rx="2" fill="#c9760f"></rect>
+      <rect x="68" y="106" width="26" height="20" rx="2" fill="#e0993d"></rect>
+      <rect x="42" y="76" width="24" height="24" rx="2" fill="#e0993d"></rect>
+      <polyline points="220,110 250,90 275,100 310,60 335,70" fill="none" stroke="#4fd1a5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      <polygon points="335,70 348,64 337,84" fill="#4fd1a5"></polygon>
+      <circle cx="220" cy="110" r="3.5" fill="#4fd1a5"></circle>
+      <circle cx="250" cy="90" r="3.5" fill="#4fd1a5"></circle>
+      <circle cx="275" cy="100" r="3.5" fill="#4fd1a5"></circle>
+      <circle cx="310" cy="60" r="3.5" fill="#4fd1a5"></circle>
+    </svg>
+    <div class="frase">"Stock correcto, clientes más cerca"</div>
+  </div>
+  <div class="login-version">v1.0 · Comerciali813</div>`;
 }
 
 function screenHome(){ STATE.screen = STATE.role==="vendedor" ? "vendedorLista" : "clientes"; return STATE.role==="vendedor" ? screenVendedorLista() : screenClientes(); }
