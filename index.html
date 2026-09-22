@@ -230,7 +230,7 @@ function histSkuParaCiudad(ciudad){
   return HIST_SKU_MENSUAL[ciudad] || null;
 }
 
-const MESES_DASHBOARD = ["MAY","JUN","JUL","ACTUAL"];
+const MESES_DASHBOARD = ["MAY","JUN","JUL","AGO","ACTUAL"];
 function lineasDisponiblesDashboard(){
   return Object.keys(LINEA2_A_LINEA3).sort();
 }
@@ -439,6 +439,7 @@ let STATE = {
   rechazandoId: null,
   coberturaFiltroCiudad: "TODAS",
   dash2Colapso: { linea:false, clientes:false },
+  ventasClienteAbierto: null,
   ventasError: null,
   firmaAcuerdo: false,
   firmaMetodo: "dibujo",
@@ -798,7 +799,7 @@ function screenLogin(){
   <div class="login-hero">
     <svg class="cube" viewBox="0 0 52 52"><polygon points="26,4 46,15 46,37 26,48 6,37 6,15" fill="none" stroke="#4fd1a5" stroke-width="2"></polygon><polygon points="26,4 46,15 26,26 6,15" fill="#4fd1a5" opacity=".85"></polygon><polygon points="6,15 26,26 26,48 6,37" fill="#ffffff" opacity=".18"></polygon><polygon points="46,15 26,26 26,48 46,37" fill="#ffffff" opacity=".08"></polygon></svg>
     <h1>Relevamiento de <b>Stock</b></h1>
-    <div class="sub">Todo Brillo · Carissa · Revive · Fixer</div>
+    <div class="sub">Cada dato bien relevado es una mejor decisión de negocio</div>
   </div>
   <div class="login-body">
     <div class="login-note" style="background:${USE_BACKEND?'#e5f6ef':'#fdeeee'};color:${USE_BACKEND?'#0e8f6f':'#a31f1f'};">
@@ -1055,35 +1056,28 @@ function screenAlmacenes(){
 }
 
 function categoriasDesplegables(items, valueKey, dataAttr, relOrCliente){
-  // Nivel 1: agrupar por marca (= Línea2). Nivel 2, dentro de cada una: por categoria (= Línea3).
+  // Nivel 1: agrupar por marca (= Línea2). Dentro de cada una, UN SOLO dato
+  // por categoria (= Línea3) — no se separa por fragancia/variante del
+  // producto. Se usa el primer SKU de cada grupo como "representante" para
+  // guardar el número; el resto del sistema ya suma por Línea3 igual.
   const porLinea2 = {};
   const ordenLinea2 = [];
   items.forEach(s=>{
     if(!porLinea2[s.marca]){ porLinea2[s.marca] = {}; ordenLinea2.push(s.marca); }
-    if(!porLinea2[s.marca][s.categoria]) porLinea2[s.marca][s.categoria] = [];
-    porLinea2[s.marca][s.categoria].push(s);
+    if(!porLinea2[s.marca][s.categoria]) porLinea2[s.marca][s.categoria] = s; // primer sku que aparece = representante
   });
   const tieneDatos = s => relOrCliente[valueKey] && relOrCliente[valueKey][s.id]!=null && relOrCliente[valueKey][s.id]!=="";
 
   return ordenLinea2.map(linea2=>{
-    const gruposLinea3 = porLinea2[linea2];
-    const todosLosSkusDeLinea2 = Object.values(gruposLinea3).flat();
-    const conDatosLinea2 = todosLosSkusDeLinea2.filter(tieneDatos).length;
+    const representantes = Object.values(porLinea2[linea2]);
+    const conDatosLinea2 = representantes.filter(tieneDatos).length;
     return `<details class="cat-block cat-block-l2">
-      <summary><span><span class="arrow">▸</span> ${linea2}</span><span class="count">${conDatosLinea2}/${todosLosSkusDeLinea2.length} con datos</span></summary>
+      <summary><span><span class="arrow">▸</span> ${linea2}</span><span class="count">${conDatosLinea2}/${representantes.length} con datos</span></summary>
       <div class="cat-body">
-        ${Object.entries(gruposLinea3).map(([linea3, skus])=>{
-          const conDatosLinea3 = skus.filter(tieneDatos).length;
-          return `<details class="cat-block cat-block-l3" ${conDatosLinea3>0?'open':''}>
-            <summary><span><span class="arrow">▸</span> ${linea3}</span><span class="count">${conDatosLinea3}/${skus.length} con datos</span></summary>
-            <div class="cat-body">
-              ${skus.map(s=>`<div class="sku-row">
-                <div class="name"><span>${s.formatoMostrado}</span></div>
-                <input type="number" min="0" inputmode="numeric" placeholder="0" data-${dataAttr}="${s.id}" value="${(relOrCliente[valueKey]&&relOrCliente[valueKey][s.id]!=null)?relOrCliente[valueKey][s.id]:''}">
-              </div>`).join("")}
-            </div>
-          </details>`;
-        }).join("")}
+        ${representantes.map(s=>`<div class="sku-row">
+          <div class="name"><span>${s.categoria}</span></div>
+          <input type="number" min="0" inputmode="numeric" placeholder="0" data-${dataAttr}="${s.id}" value="${(relOrCliente[valueKey]&&relOrCliente[valueKey][s.id]!=null)?relOrCliente[valueKey][s.id]:''}">
+        </div>`).join("")}
       </div>
     </details>`;
   }).join("");
@@ -1134,7 +1128,7 @@ function screenUbicacionFotos(){
         </div>`).join("")}
     </div>
 
-    <button class="btn btn-primary" style="margin-top:20px;" id="continuarConteoBtn" ${listo?'':'disabled'}>${listo?"Continuar al conteo de stock →":"Completá ubicación y las 4 fotos para continuar"}</button>
+    <button class="btn btn-primary" style="margin-top:20px;" id="continuarConteoBtn" ${listo?'':'disabled'}>${listo?"Continuar al conteo de stock →":"Completá ubicación y las 2 fotos para continuar"}</button>
   </main>`;
 }
 
@@ -1446,6 +1440,17 @@ function screenVentasDashboard(){
   const diasPromedio = diasConDato.length ? Math.round((diasConDato.reduce((a,b)=>a+b,0)/diasConDato.length)*10)/10 : null;
   const enRiesgo = lineasConDatos.filter(l=>l.dias!=null && l.dias<15);
 
+  const porClienteAgg = {}; // nombre -> {ciudad, stock, venta}
+  filas.forEach(f=>{
+    porClienteAgg[f.nombre] = porClienteAgg[f.nombre] || { ciudad:f.ciudad, stock:0, venta:0 };
+    porClienteAgg[f.nombre].stock += f.stock;
+    porClienteAgg[f.nombre].venta += f.ventaUnidades;
+  });
+  const clientesConDatos = Object.entries(porClienteAgg).map(([nombre,v])=>({
+    nombre, ciudad:v.ciudad, stock:v.stock, venta:v.venta, dias: v.venta>0?Math.round((v.stock/(v.venta/30))*10)/10:null
+  })).sort((a,b)=>(a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
+  const clienteAbierto = STATE.ventasClienteAbierto;
+
   const lineasDisponibles = Object.keys(LINEA2_A_LINEA3).sort();
 
   const mejorLinea = lineasConDatos.filter(l=>l.dias!=null).sort((a,b)=>b.dias-a.dias)[0];
@@ -1462,10 +1467,6 @@ function screenVentasDashboard(){
         <option value="TODAS" ${filtro==='TODAS'?'selected':''}>Todas las ciudades</option>
         ${CIUDADES.map(c=>`<option value="${c}" ${filtro===c?'selected':''}>${NOMBRES_CIUDAD[c]||c}</option>`).join("")}
       </select>`:``}
-      <select id="ventasFiltroLineaSelect">
-        <option value="TODAS" ${filtroLinea==="TODAS"?"selected":""}>Todas las líneas</option>
-        ${lineasDisponibles.map(l=>`<option value="${l}" ${filtroLinea===l?"selected":""}>${l}</option>`).join("")}
-      </select>
     </div>
 
     <div class="dash2-metrics">
@@ -1508,6 +1509,36 @@ function screenVentasDashboard(){
       }).join("")}
     </div>` : ``}
 
+    <div class="dash2-card">
+      <div class="title">Por distribuidor${filtro!=="TODAS"?" — "+nombreCiudad(filtro):""}</div>
+      ${clientesConDatos.length===0?`<div class="hint">Sin datos para este filtro.</div>`:
+      clientesConDatos.map(cl=>{
+        const cls = claseDias(cl.dias);
+        const abierto = clienteAbierto===cl.nombre;
+        return `
+        <div class="linea2-row ${abierto?'open':''}" data-toggle-cliente-ventas="${cl.nombre}">
+          <span style="font-size:12px;font-weight:700;color:#152a4a;">${abierto?'▾':'▸'} ${cl.nombre}${filtro==="TODAS"?` <span style="color:#98a2b3;font-weight:400;">(${NOMBRES_CIUDAD[cl.ciudad]||cl.ciudad})</span>`:``}</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span style="font-size:11px;color:#8a94a3;">${fmt(cl.venta)} u./mes</span>
+            <span class="dias-badge ${cls}">${cl.dias!=null?fmt(cl.dias)+" días":"sin dato"}</span>
+          </span>
+        </div>
+        ${abierto ? (()=>{
+          const filasCliente = filas.filter(f=>f.nombre===cl.nombre).sort((a,b)=>a.dias-b.dias);
+          return `<div class="linea3-sub">${filasCliente.map(f=>{
+            const clsF = claseDias(f.dias);
+            return `<div class="linea3-item">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:11.5px;font-weight:700;color:#152a4a;">${f.linea}</div>
+                <div style="font-size:10px;color:#98a2b3;">Stock ${fmt(f.stock)} u. · Venta ${fmt(f.ventaUnidades)} u./mes</div>
+              </div>
+              <span class="dias-badge ${clsF}">${fmt(f.dias)}d</span>
+            </div>`;
+          }).join("")}</div>`;
+        })() : ``}`;
+      }).join("")}
+    </div>
+
     ${enRiesgo.length>0?`
     <div class="dash2-card">
       <div class="title">Líneas que requieren atención</div>
@@ -1524,48 +1555,43 @@ function screenVentasDashboard(){
     </div>`:``}
 
     <div class="dash2-card">
-      <div class="title">Ventas por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}</div>
-      ${lineasConDatos.length===0?`<div class="hint">Sin datos para este filtro.</div>`:
-      lineasConDatos.map(l=>{
-        const cls = claseDias(l.dias);
-        const abierto = filtroLinea===l.linea;
-        return `
-        <div class="linea2-row ${abierto?'open':''}" data-toggle-linea-ventas="${l.linea}">
-          <span style="font-size:12px;font-weight:700;color:#152a4a;">${abierto?'▾':'▸'} ${l.linea}</span>
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span style="font-size:11px;color:#8a94a3;">${fmt(l.venta)} u./mes</span>
-            <span class="dias-badge ${cls}">${l.dias!=null?fmt(l.dias)+" días":"sin dato"}</span>
-          </span>
-        </div>
-        ${abierto ? (()=>{
+      <div class="title">Ventas por línea 3${filtroLinea!=="TODAS"?" — "+filtroLinea:""}</div>
+      ${(()=>{
+        const filas3 = [];
+        lineasConDatos.forEach(l=>{
+          if(filtroLinea!=="TODAS" && l.linea!==filtroLinea) return;
           const linea3sCatalogo = LINEA2_A_LINEA3[l.linea] || [];
-          const detalleL3 = [];
+          const porL3 = {}; // linea3 -> {stock, venta}
           linea3sCatalogo.forEach(linea3=>{
             clientes.forEach(c=>{
               const stockL3 = stockPorLinea3Cliente(c, l.linea);
               const stockCliente = stockL3[linea3];
               if(!stockCliente) return;
               const ventaL3 = ((ventasPorLinea3[c.id]||{})[l.linea]) || {};
-              const ventaCliente = ventaL3[linea3];
-              const dias = ventaCliente ? Math.round((stockCliente/(ventaCliente/30))*10)/10 : null;
-              detalleL3.push({ linea3, nombre:c.nombre, ciudad:c.ciudad, stock:stockCliente, venta:ventaCliente?Math.round(ventaCliente):null, dias });
+              const ventaCliente = ventaL3[linea3] || 0;
+              if(!porL3[linea3]) porL3[linea3] = { stock:0, venta:0 };
+              porL3[linea3].stock += stockCliente;
+              porL3[linea3].venta += ventaCliente;
             });
           });
-          if(linea3sCatalogo.length===0) return `<div class="hint linea3-sub">Sin desglose de línea 3 para esta línea.</div>`;
-          if(detalleL3.length===0) return `<div class="hint linea3-sub">Ningún cliente relevado tiene stock acá todavía.</div>`;
-          detalleL3.sort((a,b)=>(a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
-          return `<div class="linea3-sub">${detalleL3.map(f=>{
-            const clsF = claseDias(f.dias);
-            return `<div class="linea3-item">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:11.5px;font-weight:700;color:#152a4a;">${f.linea3}</div>
-                <div style="font-size:10px;color:#98a2b3;">${f.nombre}${filtro==="TODAS"?` (${f.ciudad})`:""} · Stock ${fmt(f.stock)} u.${f.venta!=null?` · Venta ${fmt(f.venta)} u./mes`:``}</div>
-              </div>
-              <span class="dias-badge ${clsF}">${f.dias!=null?fmt(f.dias)+"d":"—"}</span>
-            </div>`;
-          }).join("")}</div>`;
-        })() : ``}`;
-      }).join("")}
+          Object.entries(porL3).forEach(([linea3,v])=>{
+            const dias = v.venta>0 ? Math.round((v.stock/(v.venta/30))*10)/10 : null;
+            filas3.push({ linea2:l.linea, linea3, stock:v.stock, venta:Math.round(v.venta), dias });
+          });
+        });
+        if(filas3.length===0) return `<div class="hint">Sin datos para este filtro.</div>`;
+        filas3.sort((a,b)=>(a.dias==null?999:a.dias)-(b.dias==null?999:b.dias));
+        return filas3.map(x=>{
+          const cls = claseDias(x.dias);
+          return `<div class="linea3-item">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;font-weight:700;color:#152a4a;">${x.linea3}</div>
+              <div style="font-size:10px;color:#98a2b3;">${x.linea2} · Stock ${fmt(x.stock)} u.${x.venta>0?` · Venta ${fmt(x.venta)} u./mes`:``}</div>
+            </div>
+            <span class="dias-badge ${cls}">${x.dias!=null?fmt(x.dias)+" días":"sin dato"}</span>
+          </div>`;
+        }).join("");
+      })()}
     </div>
   </main>
   ${tabbar('ventas')}`;
@@ -1748,45 +1774,40 @@ function screenDashboard(){
 
   <div class="dash2-card">
     <div class="title" data-toggle-seccion="linea" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-      <span>${STATE.dash2Colapso.linea?'▸':'▾'} Stock por línea${filtroLinea!=="TODAS"?" — "+filtroLinea:""}${puedeMostrarDias?" y días de cobertura":""}</span>
+      <span>${STATE.dash2Colapso.linea?'▸':'▾'} Stock por línea 3${filtroLinea!=="TODAS"?" — "+filtroLinea:""}${puedeMostrarDias?" y días de cobertura":""}</span>
     </div>
-    ${STATE.dash2Colapso.linea ? `` :
-    Object.keys(porLinea).length===0?`<div class="hint">Sin datos para este filtro.</div>`:
-    Object.entries(porLinea).sort((a,b)=>b[1]-a[1]).map(([l,qty])=>{
-      const dias = diasPorLinea[l];
-      const cls = claseDias(dias);
-      const abierto = filtroLinea===l;
-      return `
-      <div class="linea2-row ${abierto?'open':''}" data-toggle-linea="${l}">
-        <span style="font-size:12px;font-weight:700;color:#152a4a;">${abierto?'▾':'▸'} ${l}</span>
-        <span style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:11px;color:#8a94a3;">${fmt(qty)} u.</span>
-          ${puedeMostrarDias?`<span class="dias-badge ${cls}">${dias!=null?fmt(dias)+" días":"sin venta"}</span>`:``}
-        </span>
-      </div>
-      ${abierto ? (()=>{
-        const clientesParaL3 = clientesParaVenta;
-        const porLinea3 = {};
-        clientesParaL3.forEach(c=>{ const s = stockPorLinea3Cliente(c, l); Object.entries(s).forEach(([l3,q])=>{ porLinea3[l3]=(porLinea3[l3]||0)+q; }); });
-        const linea3sCatalogo = LINEA2_A_LINEA3[l] || [];
-        const ventasPorLinea3 = (STATE.ventasCache && STATE.ventasCache.ventasPorLinea3) || {};
-        if(linea3sCatalogo.length===0) return `<div class="hint linea3-sub">Sin desglose de línea 3 para esta línea.</div>`;
-        if(Object.keys(porLinea3).length===0) return `<div class="hint linea3-sub">Ningún cliente relevado tiene stock acá todavía.</div>`;
-        return `<div class="linea3-sub">${Object.entries(porLinea3).sort((a,b)=>b[1]-a[1]).map(([l3,q])=>{
-          let ventaL3 = 0;
-          if(puedeMostrarDias) clientesParaL3.forEach(c=>{ const vv=((ventasPorLinea3[c.id]||{})[l]||{})[l3]; if(vv) ventaL3+=vv; });
-          const diasL3 = puedeMostrarDias && ventaL3>0 ? Math.round((q/(ventaL3/30))*10)/10 : null;
-          const clsL3 = claseDias(diasL3);
-          return `<div class="linea3-item">
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:11.5px;font-weight:700;color:#152a4a;">${l3}</div>
-              <div style="font-size:10px;color:#98a2b3;">Stock ${fmt(q)} u.${ventaL3>0?` · Venta ${fmt(Math.round(ventaL3))} u./mes`:``}</div>
-            </div>
-            ${puedeMostrarDias?`<span class="dias-badge ${clsL3}">${diasL3!=null?fmt(diasL3)+"d":"—"}</span>`:``}
-          </div>`;
-        }).join("")}</div>`;
-      })() : ``}`;
-    }).join("")}
+    ${STATE.dash2Colapso.linea ? `` : (()=>{
+      const ventasPorLinea3 = (STATE.ventasCache && STATE.ventasCache.ventasPorLinea3) || {};
+      const porLinea3Flat = {}; // "linea2|||linea3" -> {linea2, linea3, stock}
+      Object.keys(porLinea).forEach(l2=>{
+        if(filtroLinea!=="TODAS" && l2!==filtroLinea) return;
+        clientesParaVenta.forEach(c=>{
+          const s = stockPorLinea3Cliente(c, l2);
+          Object.entries(s).forEach(([l3,q])=>{
+            const key = l2+"|||"+l3;
+            if(!porLinea3Flat[key]) porLinea3Flat[key] = { linea2:l2, linea3:l3, stock:0 };
+            porLinea3Flat[key].stock += q;
+          });
+        });
+      });
+      const filas3 = Object.values(porLinea3Flat).map(x=>{
+        let ventaL3 = 0;
+        if(puedeMostrarDias) clientesParaVenta.forEach(c=>{ const vv=((ventasPorLinea3[c.id]||{})[x.linea2]||{})[x.linea3]; if(vv) ventaL3+=vv; });
+        const dias = puedeMostrarDias && ventaL3>0 ? Math.round((x.stock/(ventaL3/30))*10)/10 : null;
+        return { ...x, venta:Math.round(ventaL3), dias };
+      }).sort((a,b)=>b.stock-a.stock);
+      if(filas3.length===0) return `<div class="hint">Sin datos para este filtro.</div>`;
+      return filas3.map(x=>{
+        const cls = claseDias(x.dias);
+        return `<div class="linea3-item">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;font-weight:700;color:#152a4a;">${x.linea3}</div>
+            <div style="font-size:10px;color:#98a2b3;">${x.linea2} · ${fmt(x.stock)} u.${x.venta>0?` · Venta ${fmt(x.venta)} u./mes`:``}</div>
+          </div>
+          ${puedeMostrarDias?`<span class="dias-badge ${cls}">${x.dias!=null?fmt(x.dias)+" días":"sin venta"}</span>`:``}
+        </div>`;
+      }).join("");
+    })()}
   </div>
 
   ${puedeMostrarDias && pctSano!=null ? `
@@ -1905,6 +1926,13 @@ function bindEvents(){
       render();
     });
   });
+  $app.querySelectorAll("[data-toggle-cliente-ventas]").forEach(el=>{
+    el.addEventListener("click",()=>{
+      const n = el.dataset.toggleClienteVentas;
+      STATE.ventasClienteAbierto = (STATE.ventasClienteAbierto===n) ? null : n;
+      render();
+    });
+  });
   const ventasFiltroLineaSelect = document.getElementById("ventasFiltroLineaSelect");
   if(ventasFiltroLineaSelect){
     ventasFiltroLineaSelect.addEventListener("change",()=>{ STATE.ventasFiltroLinea = ventasFiltroLineaSelect.value; render(); });
@@ -2016,7 +2044,7 @@ function bindEvents(){
   if(irFotosBtn){
     irFotosBtn.addEventListener("click", ()=>{
       const rel = getRelevamiento(STATE.almacenId);
-      if(!almacenListoParaConteo(rel)){ showToast("Completá la ubicación y las 4 fotos primero"); return; }
+      if(!almacenListoParaConteo(rel)){ showToast("Completá la ubicación y las 2 fotos primero"); return; }
       STATE.screen="conteo"; render();
     });
   }
@@ -2233,14 +2261,14 @@ function handleFile(file, cb){
   reader.onload = (e)=>{
     const img = new Image();
     img.onload = ()=>{
-      const maxW = 640;
+      const maxW = 900;
       const scale = Math.min(1, maxW/img.width);
       const canvas = document.createElement("canvas");
       canvas.width = img.width*scale;
       canvas.height = img.height*scale;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img,0,0,canvas.width,canvas.height);
-      cb(canvas.toDataURL("image/jpeg",0.45));
+      cb(canvas.toDataURL("image/jpeg",0.65));
     };
     img.src = e.target.result;
   };
