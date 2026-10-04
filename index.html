@@ -367,6 +367,10 @@ const DB_LOCAL = {
   async getVentas(){
     // En modo prueba no hay hoja de Ventas real: no hay datos de venta hasta conectar el backend.
     return { ventas: {} };
+  },
+  async verificarLogin(){
+    // Modo de pruebas sin backend: no hay dónde chequear la contraseña, así que se deja pasar.
+    return { ok:true };
   }
 };
 
@@ -413,6 +417,22 @@ const DB_REMOTE = {
     catch(e){ throw new Error("La respuesta del backend no es JSON válido al pedir ventas"); }
     if(data && data.error) throw new Error("El backend devolvió un error: "+data.error);
     return data;
+  },
+  async verificarLogin(ciudad, rol, password){
+    // No reutiliza _post: ahí cualquier "error" del backend se trata como falla
+    // grave y corta con una excepción — pero acá "contraseña incorrecta" es una
+    // respuesta NORMAL, no una falla de conexión.
+    let res;
+    try{
+      res = await fetch(API_URL, {
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({ action:"verificarLogin", ciudad, rol, password })
+      });
+    }catch(e){ throw new Error("No se pudo conectar al backend (red/CORS): "+e.message); }
+    if(!res.ok) throw new Error("El backend respondió con error HTTP "+res.status);
+    try{ return await res.json(); }
+    catch(e){ throw new Error("La respuesta del backend no es JSON válido"); }
   }
 };
 
@@ -430,6 +450,7 @@ let STATE = {
   toast: null,
   loginCiudadElegida: null,
   loginRolePreset: null,
+  loginError: null,
   ultimoEnvio: null,
   dashboardFiltroCiudad: "TODAS",
   dashboardFiltroMes: "ACTUAL",
@@ -794,7 +815,7 @@ function screenLogin(){
     CBBA:{ ic:"🏔️", bg:"#3a6ea5" }, LPZ:{ ic:"🏙️", bg:"#7d5ba6" }, SCZ:{ ic:"🌴", bg:"#e08a3c" },
     ORURO:{ ic:"🏛️", bg:"#2f8fa3" }, POTOSI:{ ic:"⛰️", bg:"#a63a3a" }, SUCRE:{ ic:"🏘️", bg:"#2f8f74" }, TARIJA:{ ic:"🍇", bg:"#c9973a" },
   };
-  const NOMBRE_ROL = { relevador:"Relevador", comercial:"Ventas" };
+  const NOMBRE_ROL = { relevador:"Relevador", vendedor:"Ventas", comercial:"Comercial" };
   return `
   <div class="login-hero">
     <svg class="cube" viewBox="0 0 52 52"><polygon points="26,4 46,15 46,37 26,48 6,37 6,15" fill="none" stroke="#4fd1a5" stroke-width="2"></polygon><polygon points="26,4 46,15 26,26 6,15" fill="#4fd1a5" opacity=".85"></polygon><polygon points="6,15 26,26 26,48 6,37" fill="#ffffff" opacity=".18"></polygon><polygon points="46,15 26,26 26,48 46,37" fill="#ffffff" opacity=".08"></polygon></svg>
@@ -807,8 +828,8 @@ function screenLogin(){
       <span>${USE_BACKEND ? "Conectado a tu base de datos real. Los datos se comparten en tiempo real entre todos los que entren a esta app." : "Sin backend conectado: los datos se guardan solo en este navegador."}</span>
     </div>
     <div class="login-note" style="background:#fff1e0;color:#a3730a;">
-      <span class="ic2">🧪</span>
-      <span>Modo de pruebas: por ahora no pide contraseña. Elegí tu ciudad y tu nombre para entrar.</span>
+      <span class="ic2">🔒</span>
+      <span>Cada ciudad y rol tiene su propia contraseña compartida con el equipo. Elegí tu usuario, escribí tu nombre y la contraseña para entrar.</span>
     </div>
 
     ${preset ? `
@@ -827,6 +848,8 @@ function screenLogin(){
     ${elegida ? `
     <div class="card">
       <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Contraseña del equipo"></div>
+      ${STATE.loginError?`<div class="hint" style="color:#a31f1f;margin-top:-6px;margin-bottom:10px;">${STATE.loginError}</div>`:``}
       <button class="btn btn-primary" data-role="${preset}">Entrar como ${NOMBRE_ROL[preset]}</button>
     </div>` : ``}
     ` : `
@@ -846,9 +869,13 @@ function screenLogin(){
         <div class="city-icon-avatar" style="background:#2f8f74;">🧭</div>
         <span class="lbl">Relevador</span><span style="color:#c2c8d1;">›</span>
       </div>
-      <div class="city-icon-btn" data-preset-rol="comercial">
+      <div class="city-icon-btn" data-preset-rol="vendedor">
         <div class="city-icon-avatar" style="background:#c9760f;">💰</div>
         <span class="lbl">Ventas</span><span style="color:#c2c8d1;">›</span>
+      </div>
+      <div class="city-icon-btn" data-preset-rol="comercial">
+        <div class="city-icon-avatar" style="background:#2f5fd8;">📊</div>
+        <span class="lbl">Comercial</span><span style="color:#c2c8d1;">›</span>
       </div>
       <div class="city-icon-btn ${elegida===NACIONAL?'active':''}" data-elegir-ciudad="${NACIONAL}">
         <div class="city-icon-avatar" style="background:#152a4a;">👥</div>
@@ -863,11 +890,15 @@ function screenLogin(){
     ${elegida===ADMIN ? `
     <div class="card">
       <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Contraseña de administrador"></div>
+      ${STATE.loginError?`<div class="hint" style="color:#a31f1f;margin-top:-6px;margin-bottom:10px;">${STATE.loginError}</div>`:``}
       <button class="btn btn-primary" data-role="administrador">Entrar como Administrador</button>
     </div>
     ` : elegida ? `
     <div class="card">
       <div class="field"><label>Tu nombre</label><input type="text" id="userName" placeholder="Ej. Juan Pérez" value="${STATE.userName}"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="userPassword" placeholder="Contraseña del equipo"></div>
+      ${STATE.loginError?`<div class="hint" style="color:#a31f1f;margin-top:-6px;margin-bottom:10px;">${STATE.loginError}</div>`:``}
       <div class="row-btns">
         <button class="btn btn-primary" data-role="relevador">Ingresar como relevador</button>
         <button class="btn btn-outline" data-role="vendedor">Ingresar como vendedor</button>
@@ -1324,6 +1355,7 @@ function screenVendedorDetalle(){
           <b>${a.nombre}</b><span class="badge ${cls}">${label}</span>
         </div>
         <div class="hint">Relevado por: <b>${rel.relevadorNombre||"—"}</b>${rel.fechaConteo?" · "+new Date(rel.fechaConteo).toLocaleString():""}</div>
+        ${rel.vendedorNombre?`<div class="hint">${estKey==="rechazado"?"Rechazado":"Aprobado"} por: <b>${rel.vendedorNombre}</b>${rel.fechaDecisionVendedor?" · "+new Date(rel.fechaDecisionVendedor).toLocaleString():""}</div>`:``}
         <div class="hint">Finalizado: ${finalizado?"Sí ✔":"No, todavía en curso"}</div>
         <div class="hint">Total unidades: <b>${fmt(totalUnidades(rel))}</b></div>
         <div class="hint">Ubicación: ${rel.gps?`lat ${rel.gps.lat.toFixed(5)}, lng ${rel.gps.lng.toFixed(5)}`:"no capturada"}</div>
@@ -1864,7 +1896,7 @@ function screenExportar(){
 function bindEvents(){
   $app.querySelectorAll("[data-nav]").forEach(el=>{
     el.addEventListener("click", async ()=>{
-      if(el.dataset.nav==="login"){ STATE = {...STATE, screen:"login", ciudad:null, role:null, clienteId:null, almacenId:null, loginCiudadElegida:null, loginRolePreset:null, ventasCache:null, ventasError:null}; render(); return; }
+      if(el.dataset.nav==="login"){ STATE = {...STATE, screen:"login", ciudad:null, role:null, clienteId:null, almacenId:null, loginCiudadElegida:null, loginRolePreset:null, loginError:null, ventasCache:null, ventasError:null}; render(); return; }
       if(el.dataset.nav==="ventasDashboard"){ await abrirVentasDashboard(); return; }
       STATE.screen = el.dataset.nav;
       render();
@@ -1872,7 +1904,7 @@ function bindEvents(){
   });
 
   $app.querySelectorAll("[data-elegir-ciudad]").forEach(el=>{
-    el.addEventListener("click",()=>{ STATE.loginCiudadElegida = el.dataset.elegirCiudad; render(); });
+    el.addEventListener("click",()=>{ STATE.loginCiudadElegida = el.dataset.elegirCiudad; STATE.loginError = null; render(); });
   });
   $app.querySelectorAll("[data-preset-rol]").forEach(el=>{
     el.addEventListener("click",()=>{
@@ -1885,6 +1917,7 @@ function bindEvents(){
     el.addEventListener("click",()=>{
       STATE.loginRolePreset = null;
       STATE.loginCiudadElegida = null;
+      STATE.loginError = null;
       render();
     });
   });
@@ -1943,11 +1976,30 @@ function bindEvents(){
   $app.querySelectorAll("[data-role]").forEach(el=>{
     el.addEventListener("click", async ()=>{
       const name = document.getElementById("userName").value.trim();
+      const password = (document.getElementById("userPassword")||{}).value || "";
       const ciudad = el.dataset.role==="administrador" ? NACIONAL : STATE.loginCiudadElegida;
+      STATE.userName = name; // se guarda ya, para que no se borre el campo si falla la contraseña
       if(!name){ showToast("Escribí tu nombre para continuar"); return; }
+      if(!password){ STATE.loginError = "Escribí la contraseña para continuar."; render(); return; }
+      STATE.loginError = null;
+      el.disabled = true;
+      let verif;
+      try{
+        verif = await DB.verificarLogin(ciudad, el.dataset.role, password);
+      }catch(e){
+        el.disabled = false;
+        STATE.loginError = "No se pudo verificar la contraseña: "+(e.message||String(e));
+        render(); return;
+      }
+      if(!verif || !verif.ok){
+        el.disabled = false;
+        STATE.loginError = (verif && verif.error) ? verif.error : "Contraseña incorrecta.";
+        render(); return;
+      }
       STATE.userName = name;
       STATE.ciudad = ciudad;
       STATE.role = el.dataset.role;
+      STATE.loginError = null;
       if(el.dataset.role==="comercial"){ await abrirVentasDashboard(); return; }
       STATE.screen = el.dataset.role==="relevador" ? "clientes" : "vendedorLista";
       render();
@@ -2138,7 +2190,10 @@ function bindEvents(){
 
   $app.querySelectorAll("[data-aprobar]").forEach(el=>{
     el.addEventListener("click", async ()=>{
-      STATE.relevamientos[el.dataset.aprobar].estadoVendedor = "aprobado";
+      const rel = STATE.relevamientos[el.dataset.aprobar];
+      rel.estadoVendedor = "aprobado";
+      rel.vendedorNombre = STATE.userName;
+      rel.fechaDecisionVendedor = new Date().toISOString();
       await saveRelevamientoActual(el.dataset.aprobar);
       render();
     });
@@ -2240,8 +2295,11 @@ function bindEvents(){
     el.addEventListener("click", async ()=>{
       const almacenId = el.dataset.confirmarRechazo;
       const motivo = (document.getElementById("motivoRechazoInput")||{}).value || "";
-      STATE.relevamientos[almacenId].estadoVendedor = "rechazado";
-      STATE.relevamientos[almacenId].comentarioVendedor = motivo.trim();
+      const rel = STATE.relevamientos[almacenId];
+      rel.estadoVendedor = "rechazado";
+      rel.comentarioVendedor = motivo.trim();
+      rel.vendedorNombre = STATE.userName;
+      rel.fechaDecisionVendedor = new Date().toISOString();
       STATE.rechazandoId = null;
       await saveRelevamientoActual(almacenId);
       render();
@@ -2402,7 +2460,7 @@ function exportarExcel(){
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), ciudad);
   });
 
-  const detalle = [["Ciudad","Cliente","Vendedor","Almacén","Fecha conteo","Relevador","Latitud","Longitud","Precisión (m)","Fotos vigentes","Fotos eliminadas por vencimiento","Cliente conforme","Tipo de firma","Firma registrada","Estado vendedor"]];
+  const detalle = [["Ciudad","Cliente","Vendedor asignado","Almacén","Fecha conteo","Relevador","Latitud","Longitud","Precisión (m)","Fotos vigentes","Fotos eliminadas por vencimiento","Cliente conforme","Tipo de firma","Firma registrada","Estado vendedor","Decidido por","Fecha decisión","Motivo rechazo"]];
   clientesAExportar.forEach(c=>{
     (c.almacenes||[]).forEach(a=>{
       const r = STATE.relevamientos[a.id] || {};
@@ -2417,6 +2475,9 @@ function exportarExcel(){
         r.firmaTipo==="nombre"?"Nombre escrito":r.firmaTipo==="dibujo"?"Firma en pantalla":"",
         r.firmaImg?"Sí":"No",
         r.estadoVendedor||"borrador",
+        r.vendedorNombre||"",
+        r.fechaDecisionVendedor? new Date(r.fechaDecisionVendedor).toLocaleString():"",
+        r.comentarioVendedor||"",
       ]);
     });
   });
